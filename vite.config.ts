@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: "esnext",
+    chunkSizeWarningLimit: 1000,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
