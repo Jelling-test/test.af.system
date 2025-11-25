@@ -1,0 +1,507 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { Zap, LogOut, User, Power, AlertTriangle, ShoppingCart, Calendar, UtensilsCrossed, Info } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDanishDateTime, formatDanishDate } from "@/utils/dateTime";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
+
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [guestSession, setGuestSession] = useState<any>(null);
+  const [pakke, setPakke] = useState<any>(null);
+  const [maaler, setMaaler] = useState<any>(null);
+  const [isPowerOn, setIsPowerOn] = useState(false);
+  const [isTogglingPower, setIsTogglingPower] = useState(false);
+  const [consumptionHistory, setConsumptionHistory] = useState<any[]>([]);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [arrivalDate, setArrivalDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  useEffect(() => {
+    if (!guestSession?.booking_nummer) return;
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'plugin_data',
+          filter: `data->>booking_nummer=eq.${guestSession.booking_nummer}`,
+        },
+        () => {
+          loadPakkeData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [guestSession]);
+
+  const loadDashboardData = async () => {
+    try {
+      const sessionData = localStorage.getItem("guest_session");
+      
+      if (!sessionData) {
+        navigate("/");
+        return;
+      }
+
+      const session = JSON.parse(sessionData);
+      setGuestSession(session);
+      
+      // Tjek checked-in status fra booking data
+      const checkedIn = session.booking_data?.checked_in === true;
+      setIsCheckedIn(checkedIn);
+      setArrivalDate(session.booking_data?.arrival_date || null);
+      
+      await loadPakkeData();
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPakkeData = async () => {
+    try {
+      const sessionData = localStorage.getItem("guest_session");
+      if (!sessionData) return;
+      
+      const session = JSON.parse(sessionData);
+
+      // Query active pakke
+      const { data: pakkeData, error: pakkeError } = await (supabase as any)
+        .from('plugin_data')
+        .select('*')
+        .eq('organization_id', session.organization_id)
+        .eq('module', 'pakker')
+        .eq('data->>booking_nummer', session.booking_nummer)
+        .eq('data->>status', 'aktiv')
+        .maybeSingle();
+
+      if (pakkeError) throw pakkeError;
+      
+      if (pakkeData) {
+        setPakke(pakkeData);
+
+        // Query måler info
+        const maalerId = pakkeData.data?.maaler_id;
+        if (maalerId) {
+          const { data: maalerData, error: maalerError } = await (supabase as any)
+            .from('plugin_data')
+            .select('*')
+            .eq('module', 'målere')
+            .eq('ref_id', maalerId)
+            .maybeSingle();
+
+          if (maalerError) throw maalerError;
+          if (maalerData) {
+            setMaaler(maalerData);
+            setIsPowerOn(maalerData.data?.power_status === 'on');
+          }
+        }
+
+        // Load consumption history (last 7 days)
+        await loadConsumptionHistory(session.booking_nummer);
+      }
+    } catch (error) {
+      console.error("Error loading pakke data:", error);
+    }
+  };
+
+  const loadConsumptionHistory = async (bookingNummer: string) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('plugin_data')
+        .select('*')
+        .eq('module', 'forbrug_historik')
+        .eq('data->>booking_nummer', bookingNummer)
+        .order('data->>timestamp', { ascending: true })
+        .limit(7);
+
+      if (error) throw error;
+      setConsumptionHistory(data || []);
+    } catch (error) {
+      console.error("Error loading consumption history:", error);
+    }
+  };
+
+  const togglePower = async (turnOn: boolean) => {
+    if (!maaler) return;
+    
+    setIsTogglingPower(true);
+    try {
+      const { error } = await supabase.functions.invoke('toggle-power', {
+        body: {
+          maaler_id: maaler.ref_id,
+          action: turnOn ? 'on' : 'off',
+          booking_nummer: guestSession?.booking_nummer,
+        }
+      });
+
+      if (error) throw error;
+
+      setIsPowerOn(turnOn);
+      toast({
+        title: turnOn ? "Strøm tændt" : "Strøm slukket",
+        description: `${maaler.data?.måler_navn} er nu ${turnOn ? 'tændt' : 'slukket'}`,
+      });
+    } catch (error: any) {
+      console.error("Error toggling power:", error);
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke ændre strømstatus",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTogglingPower(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      localStorage.removeItem("guest_session");
+      toast({
+        title: "Logget ud",
+        description: "Du er nu logget ud",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: "Der opstod en fejl ved logud",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/20 animate-fade-in">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  const enhedRabLeft = pakke?.data?.enheder_tilbage || 0;
+  const enhederTotal = pakke?.data?.enheder_total || 0;
+  const enhederBrugt = enhederTotal - enhedRabLeft;
+  const lowPower = enhedRabLeft <= 5;
+  const expiryDate = pakke?.data?.expiry_date;
+
+  // Prepare chart data
+  const chartData = {
+    labels: consumptionHistory.map(h => {
+      const date = new Date(h.data?.timestamp || '');
+      return date.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+    }),
+    datasets: [
+      {
+        label: 'Forbrug (kWh)',
+        data: consumptionHistory.map(h => h.data?.kwh_brugt || 0),
+        borderColor: 'hsl(var(--primary))',
+        backgroundColor: 'hsla(var(--primary), 0.1)',
+        fill: true,
+        tension: 0.4,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'kWh'
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 animate-fade-in">
+      {/* Header */}
+      <header className="border-b bg-card/95 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold truncate">
+                  Velkommen, {guestSession?.booking_data?.fornavn || guestSession?.booking_data?.efternavn || "Gæst"}!
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  Booking #{guestSession?.booking_nummer}
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut} 
+              size="sm"
+              className="h-9 flex-shrink-0"
+              aria-label="Log ud"
+            >
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Log ud</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Not Checked In Info */}
+        {!isCheckedIn && (
+          <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950 animate-scale-in">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3">
+                <Info className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                <div className="space-y-3 flex-1">
+                  <div>
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-lg">
+                      Velkommen til Jelling Camping!
+                    </h3>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                      Du er ikke checked in endnu. Strømfunktioner vil være tilgængelige efter check-in.
+                    </p>
+                  </div>
+                  {arrivalDate && (
+                    <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <Calendar className="h-4 w-4 inline mr-2" />
+                        Ankomst: {formatDanishDate(arrivalDate)}
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Kommende funktioner (tilgængelige snart):
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200 bg-white dark:bg-gray-900 rounded p-2 border border-blue-200 dark:border-blue-800">
+                        <Calendar className="h-4 w-4" />
+                        <span>Kalender & aktiviteter</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200 bg-white dark:bg-gray-900 rounded p-2 border border-blue-200 dark:border-blue-800">
+                        <UtensilsCrossed className="h-4 w-4" />
+                        <span>Bordbestilling</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Low Power Warning */}
+        {isCheckedIn && lowPower && (
+          <Card className="border-destructive bg-destructive/10 animate-scale-in">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-destructive">Lav strøm!</p>
+                    <p className="text-sm text-muted-foreground">
+                      Kun {enhedRabLeft} kWh tilbage
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() => navigate('/tillaegs-pakke')}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Køb tillægspakke
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Måler Card - kun for checked-in gæster */}
+        {isCheckedIn && maaler && (
+          <Card className="animate-slide-up">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl">{maaler.data?.måler_navn || "Din måler"}</CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <span className={`inline-block w-2 h-2 rounded-full ${isPowerOn ? 'bg-green-500' : 'bg-red-500'}`} />
+                {isPowerOn ? "Strøm tændt" : "Strøm slukket"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  className="h-12 sm:h-auto"
+                  variant={isPowerOn ? "outline" : "default"}
+                  onClick={() => togglePower(true)}
+                  disabled={isTogglingPower || isPowerOn}
+                  aria-label="Tænd for strøm"
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  Tænd
+                </Button>
+                <Button
+                  className="h-12 sm:h-auto"
+                  variant={!isPowerOn ? "outline" : "destructive"}
+                  onClick={() => togglePower(false)}
+                  disabled={isTogglingPower || !isPowerOn}
+                  aria-label="Sluk for strøm"
+                >
+                  <Power className="h-4 w-4 mr-2" />
+                  Sluk
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Forbrug Oversigt - kun for checked-in gæster */}
+        {isCheckedIn && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+          <Card className="bg-primary text-primary-foreground">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium opacity-90">Resterende</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl sm:text-4xl font-bold">{enhedRabLeft}</div>
+              <p className="text-sm opacity-75">kWh tilbage</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-success text-success-foreground">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium opacity-90">Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl sm:text-4xl font-bold">{enhederTotal}</div>
+              <p className="text-sm opacity-75">kWh total</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-warning text-warning-foreground">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium opacity-90">Brugt</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl sm:text-4xl font-bold">{enhederBrugt}</div>
+              <p className="text-sm opacity-75">kWh brugt</p>
+            </CardContent>
+          </Card>
+        </div>
+        )}
+
+        {/* Expiry Info - kun for checked-in gæster */}
+        {isCheckedIn && expiryDate && (
+          <Card className="animate-fade-in">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>Udløber:</strong> {formatDanishDateTime(expiryDate, {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Consumption Graph - kun for checked-in gæster */}
+        {isCheckedIn && (
+        <Card className="animate-fade-in">
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Forbrugsgraf</CardTitle>
+            <CardDescription className="text-sm">Dit strømforbrug over de sidste 7 dage</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-48 sm:h-64">
+              {consumptionHistory.length > 0 ? (
+                <Line data={chartData} options={chartOptions} />
+              ) : (
+                <div className="h-full bg-muted/30 rounded-lg flex items-center justify-center p-4">
+                  <p className="text-muted-foreground text-sm text-center">Ingen forbrugsdata tilgængelig endnu</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        )}
+
+        {/* Buy More Button - kun for checked-in gæster */}
+        {isCheckedIn && (
+        <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground animate-scale-in">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-bold mb-1">Løbet tør for strøm?</h3>
+                <p className="opacity-90 text-sm sm:text-base">Køb mere strøm med få klik</p>
+              </div>
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => navigate('/tillaegs-pakke')}
+                className="w-full sm:w-auto h-12"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Køb tillægspakke
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;

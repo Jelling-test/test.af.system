@@ -1,0 +1,957 @@
+import { useEffect, useState } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import { formatDanishDate } from "@/utils/dateTime";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import TableSkeleton from "@/components/shared/TableSkeleton";
+import EmptyState from "@/components/shared/EmptyState";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Search,
+  MoreVertical,
+  Package,
+  Gift,
+  Move,
+  LogOut,
+  Eye,
+} from "lucide-react";
+
+interface Customer {
+  id: string;
+  data: {
+    booking_nummer: string;
+    navn: string;
+    fornavn?: string;
+    efternavn?: string;
+    email?: string;
+    check_in: string;
+    check_out: string;
+    kunde_type: string;
+    status: string;
+    maaler_navn?: string;
+    aktiv_pakke?: string;
+    spot_number?: string;
+    license_plates?: string[];
+    number_of_persons?: number;
+  };
+}
+
+const AdminKunder = () => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [kundeTypeFilter, setKundeTypeFilter] = useState("all");
+
+  // Modals
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAssignPackageModal, setShowAssignPackageModal] = useState(false);
+  const [showFreePackageModal, setShowFreePackageModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
+
+  // Selected customer and data
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<any>(null);
+  const [availablePackages, setAvailablePackages] = useState<any[]>([]);
+  const [availableMeters, setAvailableMeters] = useState<any[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [freePackageReason, setFreePackageReason] = useState("");
+  const [selectedMeter, setSelectedMeter] = useState<string>("");
+
+  useEffect(() => {
+    fetchCustomers();
+    fetchPackages();
+  }, []);
+
+  useEffect(() => {
+    filterCustomers();
+  }, [customers, debouncedSearchTerm, kundeTypeFilter]);
+
+  const fetchCustomers = async () => {
+    try {
+      // Hent sæson kunder (checked in)
+      const { data: seasonalData, error: seasonalError } = await (supabase as any)
+        .from("seasonal_customers")
+        .select("*")
+        .eq("checked_in", true)
+        .order("created_at", { ascending: false });
+
+      if (seasonalError) throw seasonalError;
+
+      // Hent kørende campister (checked in)
+      const { data: regularData, error: regularError } = await (supabase as any)
+        .from("regular_customers")
+        .select("*")
+        .eq("checked_in", true)
+        .order("created_at", { ascending: false });
+
+      if (regularError) throw regularError;
+
+      // Konverter til Customer format
+      const allCustomers = [
+        ...(seasonalData || []).map((customer: any) => ({
+          id: customer.id,
+          ref_id: customer.booking_id.toString(),
+          data: {
+            booking_nummer: customer.booking_id,
+            navn: `${customer.first_name} ${customer.last_name}`,
+            fornavn: customer.first_name,
+            efternavn: customer.last_name,
+            email: "", // Ikke tilgængelig i denne tabel
+            check_in: customer.arrival_date,
+            check_out: customer.departure_date,
+            kunde_type: "sæson",
+            status: customer.checked_in ? "aktiv" : "kommende",
+            maaler_navn: null, // Kan udvides senere
+            aktiv_pakke: customer.has_power_package ? customer.power_package_type : null,
+            spot_number: customer.spot_number,
+            license_plates: customer.license_plates,
+          },
+          created_at: customer.created_at,
+        })),
+        ...(regularData || []).map((customer: any) => ({
+          id: customer.id,
+          ref_id: customer.booking_id.toString(),
+          data: {
+            booking_nummer: customer.booking_id,
+            navn: `${customer.first_name} ${customer.last_name}`,
+            fornavn: customer.first_name,
+            efternavn: customer.last_name,
+            email: "", // Ikke tilgængelig i denne tabel
+            check_in: customer.arrival_date,
+            check_out: customer.departure_date,
+            kunde_type: "kørende",
+            status: customer.checked_in ? "aktiv" : "kommende",
+            maaler_navn: null, // Kan udvides senere
+            aktiv_pakke: null,
+            spot_number: customer.spot_number,
+            license_plates: customer.license_plates,
+            number_of_persons: customer.number_of_persons,
+          },
+          created_at: customer.created_at,
+        })),
+      ];
+
+      setCustomers(allCustomers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      toast.error("Fejl ved hentning af kunder");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPackages = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "pakke_typer")
+        .filter("data->>status", "eq", "aktiv");
+
+      if (error) throw error;
+      setAvailablePackages(data || []);
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+    }
+  };
+
+  const fetchAvailableMeters = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "maalere")
+        .filter("data->>status", "eq", "ledig");
+
+      if (error) throw error;
+      setAvailableMeters(data || []);
+    } catch (error) {
+      console.error("Error fetching meters:", error);
+    }
+  };
+
+  const filterCustomers = () => {
+    let filtered = customers;
+
+    if (kundeTypeFilter !== "all") {
+      filtered = filtered.filter((c) => c.data.kunde_type === kundeTypeFilter);
+    }
+
+    if (debouncedSearchTerm) {
+      filtered = filtered.filter(
+        (c) =>
+          c.data.booking_nummer?.toString().toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          c.data.navn?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          c.data.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredCustomers(filtered);
+  };
+
+  const fetchCustomerDetails = async (customer: Customer) => {
+    try {
+      // Fetch all packages for this customer
+      const { data: packages } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "pakker")
+        .filter("data->>booking_nummer", "eq", customer.data.booking_nummer)
+        .order("created_at", { ascending: false });
+
+      // Fetch payment history
+      const { data: payments } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "betalinger")
+        .filter("data->>booking_nummer", "eq", customer.data.booking_nummer)
+        .order("created_at", { ascending: false });
+
+      setCustomerDetails({
+        packages: packages || [],
+        payments: payments || [],
+      });
+    } catch (error) {
+      console.error("Error fetching customer details:", error);
+      toast.error("Fejl ved hentning af kunde detaljer");
+    }
+  };
+
+  const handleViewDetails = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    await fetchCustomerDetails(customer);
+    setShowDetailsModal(true);
+  };
+
+  const handleAssignPackage = async () => {
+    if (!selectedCustomer || !selectedPackage) {
+      toast.error("Vælg en pakke");
+      return;
+    }
+
+    try {
+      const packageType = availablePackages.find((p) => p.id === selectedPackage);
+      if (!packageType) return;
+
+      // Create active package
+      const { error } = await (supabase as any)
+        .from("plugin_data")
+        .insert({
+          organization_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          module: "pakker",
+          ref_id: crypto.randomUUID(),
+          data: {
+            booking_nummer: selectedCustomer.data.booking_nummer,
+            pakke_navn: packageType.data.pakke_navn,
+            enheder: packageType.data.enheder,
+            status: "aktiv",
+            betaling_metode: "reception",
+          },
+        });
+
+      if (error) throw error;
+
+      toast.success("Pakke tildelt");
+      setShowAssignPackageModal(false);
+      setSelectedPackage("");
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error assigning package:", error);
+      toast.error("Fejl ved tildeling af pakke");
+    }
+  };
+
+  const handleAssignFreePackage = async () => {
+    if (!selectedCustomer || !selectedPackage || !freePackageReason.trim()) {
+      toast.error("Vælg pakke og indtast årsag");
+      return;
+    }
+
+    try {
+      const packageType = availablePackages.find((p) => p.id === selectedPackage);
+      if (!packageType) return;
+
+      // Check 1000 unit limit for free packages
+      if (packageType.data.enheder > 1000) {
+        toast.error("Gratis pakker må maks være 1000 enheder");
+        return;
+      }
+
+      // Create free package
+      const { error: packageError } = await (supabase as any)
+        .from("plugin_data")
+        .insert({
+          organization_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          module: "pakker",
+          ref_id: crypto.randomUUID(),
+          data: {
+            booking_nummer: selectedCustomer.data.booking_nummer,
+            pakke_navn: packageType.data.pakke_navn,
+            enheder: packageType.data.enheder,
+            status: "aktiv",
+            betaling_metode: "gratis",
+          },
+        });
+
+      if (packageError) throw packageError;
+
+      // Log to audit log
+      const { error: logError } = await (supabase as any)
+        .from("plugin_data")
+        .insert({
+          organization_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          module: "audit_log",
+          ref_id: crypto.randomUUID(),
+          data: {
+            action: "assign_free_package",
+            booking_nummer: selectedCustomer.data.booking_nummer,
+            pakke_navn: packageType.data.pakke_navn,
+            reason: freePackageReason,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+      if (logError) throw logError;
+
+      toast.success("Gratis pakke tildelt og logget");
+      setShowFreePackageModal(false);
+      setSelectedPackage("");
+      setFreePackageReason("");
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error assigning free package:", error);
+      toast.error("Fejl ved tildeling af gratis pakke");
+    }
+  };
+
+  const handleMoveMeter = async () => {
+    if (!selectedCustomer || !selectedMeter) {
+      toast.error("Vælg en måler");
+      return;
+    }
+
+    try {
+      // Get current meter
+      const { data: currentMeter } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "maalere")
+        .filter("data->>booking_nummer", "eq", selectedCustomer.data.booking_nummer)
+        .maybeSingle();
+
+      // Free current meter
+      if (currentMeter) {
+        await (supabase as any)
+          .from("plugin_data")
+          .update({
+            data: {
+              ...currentMeter.data,
+              booking_nummer: null,
+              status: "ledig",
+            },
+          })
+          .eq("id", currentMeter.id);
+      }
+
+      // Get new meter data
+      const newMeter = availableMeters.find((m) => m.id === selectedMeter);
+      if (!newMeter) return;
+
+      // Assign new meter
+      await (supabase as any)
+        .from("plugin_data")
+        .update({
+          data: {
+            ...newMeter.data,
+            booking_nummer: selectedCustomer.data.booking_nummer,
+            status: "optaget",
+          },
+        })
+        .eq("id", selectedMeter);
+
+      // Log action
+      await (supabase as any)
+        .from("plugin_data")
+        .insert({
+          organization_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          module: "audit_log",
+          ref_id: crypto.randomUUID(),
+          data: {
+            action: "move_meter",
+            booking_nummer: selectedCustomer.data.booking_nummer,
+            from_meter: currentMeter?.data?.maaler_navn,
+            to_meter: newMeter.data.maaler_navn,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+      toast.success("Kunde flyttet til ny måler");
+      setShowMoveModal(false);
+      setSelectedMeter("");
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error moving meter:", error);
+      toast.error("Fejl ved flytning af måler");
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!selectedCustomer) return;
+
+    try {
+      // Delete all packages
+      await (supabase as any)
+        .from("plugin_data")
+        .delete()
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "pakker")
+        .filter("data->>booking_nummer", "eq", selectedCustomer.data.booking_nummer);
+
+      // Free meter
+      await (supabase as any)
+        .from("plugin_data")
+        .update({
+          data: {
+            booking_nummer: null,
+            status: "ledig",
+          },
+        })
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "maalere")
+        .filter("data->>booking_nummer", "eq", selectedCustomer.data.booking_nummer);
+
+      // Update booking status
+      await (supabase as any)
+        .from("plugin_data")
+        .update({
+          data: {
+            ...selectedCustomer.data,
+            status: "checked_out",
+          },
+        })
+        .eq("id", selectedCustomer.id);
+
+      toast.success("Kunde tjekket ud");
+      setShowCheckoutDialog(false);
+      setSelectedCustomer(null);
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      toast.error("Fejl ved checkout");
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; variant: any }> = {
+      aktiv: { label: "Aktiv", variant: "default" },
+      checked_out: { label: "Checked out", variant: "secondary" },
+    };
+
+    const config = statusMap[status] || { label: status, variant: "outline" };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  if (loading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AdminSidebar />
+          <div className="flex-1 flex flex-col">
+            <header className="h-16 border-b bg-background flex items-center px-4 sm:px-6">
+              <SidebarTrigger />
+              <h1 className="text-xl sm:text-2xl font-bold ml-4">Kunder</h1>
+            </header>
+            <main className="flex-1 p-4 sm:p-6 bg-muted/20">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kunde oversigt</CardTitle>
+                  <CardDescription>Indlæser kundedata...</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TableSkeleton rows={10} columns={9} />
+                </CardContent>
+              </Card>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="h-16 border-b bg-background flex items-center px-4 sm:px-6">
+            <SidebarTrigger />
+            <h1 className="text-xl sm:text-2xl font-bold ml-4">Kunder</h1>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 bg-muted/20 animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle>Kunde oversigt</CardTitle>
+                <CardDescription>Administrer alle bookinger og kunder</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Søg efter booking nr., navn eller email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 h-11"
+                        aria-label="Søg efter kunder"
+                      />
+                    </div>
+                  </div>
+                  <Select value={kundeTypeFilter} onValueChange={setKundeTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] h-11">
+                      <SelectValue placeholder="Kunde type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">Alle typer</SelectItem>
+                      <SelectItem value="sæson">Sæson kunder</SelectItem>
+                      <SelectItem value="kørende">Kørende campister</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Table - Responsive with horizontal scroll on mobile */}
+                <div className="border rounded-lg overflow-x-auto">
+                  {filteredCustomers.length === 0 ? (
+                    <EmptyState
+                      icon={Search}
+                      title="Ingen kunder fundet"
+                      description={
+                        debouncedSearchTerm || kundeTypeFilter !== "all"
+                          ? "Prøv at justere dine søgekriterier"
+                          : "Der er ingen aktive kunder i systemet endnu"
+                      }
+                    />
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[100px]">Booking nr.</TableHead>
+                          <TableHead className="min-w-[150px]">Navn</TableHead>
+                          <TableHead className="min-w-[200px]">Email</TableHead>
+                          <TableHead className="min-w-[180px]">Check-in/out</TableHead>
+                          <TableHead className="min-w-[120px]">Kunde type</TableHead>
+                          <TableHead className="min-w-[100px]">Måler</TableHead>
+                          <TableHead className="min-w-[120px]">Aktiv pakke</TableHead>
+                          <TableHead className="min-w-[100px]">Status</TableHead>
+                          <TableHead className="w-12">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCustomers.map((customer) => (
+                          <TableRow
+                            key={customer.id}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleViewDetails(customer)}
+                          >
+                            <TableCell className="font-medium">
+                              {customer.data.booking_nummer}
+                            </TableCell>
+                            <TableCell>{customer.data.navn}</TableCell>
+                            <TableCell className="text-sm">{customer.data.email || "-"}</TableCell>
+                            <TableCell className="text-sm">
+                              {formatDanishDate(customer.data.check_in)} -{" "}
+                              {formatDanishDate(customer.data.check_out)}
+                            </TableCell>
+                            <TableCell className="capitalize">
+                              {customer.data.kunde_type}
+                            </TableCell>
+                            <TableCell>{customer.data.maaler_navn || "-"}</TableCell>
+                            <TableCell>{customer.data.aktiv_pakke || "-"}</TableCell>
+                            <TableCell>{getStatusBadge(customer.data.status)}</TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-10 w-10"
+                                    aria-label="Åbn handlinger"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-background z-50">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowAssignPackageModal(true);
+                                    }}
+                                  >
+                                    <Package className="mr-2 h-4 w-4" />
+                                    Tildel pakke
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowFreePackageModal(true);
+                                    }}
+                                  >
+                                    <Gift className="mr-2 h-4 w-4" />
+                                    Tildel gratis pakke
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={async () => {
+                                      setSelectedCustomer(customer);
+                                      await fetchAvailableMeters();
+                                      setShowMoveModal(true);
+                                    }}
+                                  >
+                                    <Move className="mr-2 h-4 w-4" />
+                                    Flyt til anden måler
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowCheckoutDialog(true);
+                                    }}
+                                    className="text-destructive"
+                                  >
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Manuel checkout
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
+      </div>
+
+      {/* Customer Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="bg-background max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Kunde detaljer</DialogTitle>
+            <DialogDescription>
+              Booking: {selectedCustomer?.data.booking_nummer}
+            </DialogDescription>
+          </DialogHeader>
+          {customerDetails && (
+            <div className="space-y-6 py-4">
+              {/* Booking Info */}
+              <div>
+                <h3 className="font-semibold mb-2">Booking Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Booking nummer</p>
+                    <p className="font-medium">{selectedCustomer?.data.booking_nummer}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Navn</p>
+                    <p className="font-medium">{selectedCustomer?.data.navn}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Kunde type</p>
+                    <p className="font-medium capitalize">{selectedCustomer?.data.kunde_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Status</p>
+                    <p className="font-medium capitalize">{selectedCustomer?.data.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Ankomst</p>
+                    <p className="font-medium">{selectedCustomer?.data.check_in ? formatDanishDate(selectedCustomer.data.check_in) : "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Afrejse</p>
+                    <p className="font-medium">{selectedCustomer?.data.check_out ? formatDanishDate(selectedCustomer.data.check_out) : "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Plads nummer</p>
+                    <p className="font-medium">{selectedCustomer?.data.spot_number || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Måler</p>
+                    <p className="font-medium">{selectedCustomer?.data.maaler_navn || "Ikke tildelt"}</p>
+                  </div>
+                  {selectedCustomer?.data.license_plates && selectedCustomer.data.license_plates.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Nummerplader</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {selectedCustomer.data.license_plates.map((plate: string, idx: number) => (
+                          <Badge key={idx} variant="outline">{plate}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedCustomer?.data.number_of_persons && (
+                    <div>
+                      <p className="text-muted-foreground">Antal personer</p>
+                      <p className="font-medium">{selectedCustomer.data.number_of_persons}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Packages */}
+              <div>
+                <h3 className="font-semibold mb-2">Pakker</h3>
+                {customerDetails.packages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Ingen pakker</p>
+                ) : (
+                  <div className="space-y-2">
+                    {customerDetails.packages.map((pkg: any) => (
+                      <div key={pkg.id} className="p-3 border rounded-lg text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{pkg.data.pakke_navn}</span>
+                          <Badge variant={pkg.data.status === "aktiv" ? "default" : "secondary"}>
+                            {pkg.data.status}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mt-1">
+                          {pkg.data.enheder} enheder - {pkg.data.betaling_metode}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment History */}
+              <div>
+                <h3 className="font-semibold mb-2">Betalingshistorik</h3>
+                {customerDetails.payments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Ingen betalinger</p>
+                ) : (
+                  <div className="space-y-2">
+                    {customerDetails.payments.map((payment: any) => (
+                      <div key={payment.id} className="p-3 border rounded-lg text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{payment.data.beloeb} kr</span>
+                          <span className="text-muted-foreground">
+                            {formatDanishDate(payment.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground mt-1">
+                          Metode: {payment.data.metode || "N/A"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowDetailsModal(false)}>Luk</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Package Modal */}
+      <Dialog open={showAssignPackageModal} onOpenChange={setShowAssignPackageModal}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle>Tildel pakke</DialogTitle>
+            <DialogDescription>
+              Vælg en pakke til {selectedCustomer?.data.navn}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Vælg pakke</Label>
+              <Select value={selectedPackage} onValueChange={setSelectedPackage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg pakke" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {availablePackages.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.data.pakke_navn} - {pkg.data.enheder} enheder - {pkg.data.pris} kr
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignPackageModal(false)}>
+              Annuller
+            </Button>
+            <Button onClick={handleAssignPackage}>Tildel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Free Package Modal */}
+      <Dialog open={showFreePackageModal} onOpenChange={setShowFreePackageModal}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle>Tildel gratis pakke</DialogTitle>
+            <DialogDescription>
+              Gratis pakker må maks være 1000 enheder og kræver en begrundelse
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Vælg pakke</Label>
+              <Select value={selectedPackage} onValueChange={setSelectedPackage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg pakke" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {availablePackages
+                    .filter((pkg) => pkg.data.enheder <= 1000)
+                    .map((pkg) => (
+                      <SelectItem key={pkg.id} value={pkg.id}>
+                        {pkg.data.pakke_navn} - {pkg.data.enheder} enheder
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Begrundelse (påkrævet)</Label>
+              <Textarea
+                id="reason"
+                placeholder="Indtast årsag til gratis pakke..."
+                value={freePackageReason}
+                onChange={(e) => setFreePackageReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFreePackageModal(false)}>
+              Annuller
+            </Button>
+            <Button onClick={handleAssignFreePackage}>Tildel gratis</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move Meter Modal */}
+      <Dialog open={showMoveModal} onOpenChange={setShowMoveModal}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle>Flyt til anden måler</DialogTitle>
+            <DialogDescription>
+              Nuværende måler: {selectedCustomer?.data.maaler_navn || "Ingen"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Vælg ny måler</Label>
+              <Select value={selectedMeter} onValueChange={setSelectedMeter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg ledig måler" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {availableMeters.map((meter) => (
+                    <SelectItem key={meter.id} value={meter.id}>
+                      {meter.data.maaler_navn}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMoveModal(false)}>
+              Annuller
+            </Button>
+            <Button onClick={handleMoveMeter}>Flyt måler</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Checkout Confirmation */}
+      <AlertDialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
+        <AlertDialogContent className="bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Manuel checkout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dette vil udføre følgende handlinger:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Slette alle pakker</li>
+                <li>Frigøre måleren</li>
+                <li>Sætte booking status til "checked_out"</li>
+              </ul>
+              <p className="mt-2 font-medium">Er du sikker?</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuller</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCheckout}>
+              Udfør checkout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </SidebarProvider>
+  );
+};
+
+export default AdminKunder;
