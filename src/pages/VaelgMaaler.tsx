@@ -94,6 +94,14 @@ const VaelgMaaler = () => {
 
         if (error) throw error;
 
+        // HYTTE-FILTER: Hent alle målere der er låst til hytter
+        const { data: cabinMeters } = await (supabase as any)
+          .from('cabins')
+          .select('meter_id')
+          .not('meter_id', 'is', null);
+
+        const cabinMeterIds = new Set(cabinMeters?.map((c: any) => c.meter_id) || []);
+
         // Get all assigned meter IDs from customers (both UUID and direct)
         const { data: seasonalCustomers } = await (supabase as any)
           .from('seasonal_customers')
@@ -120,6 +128,11 @@ const VaelgMaaler = () => {
           (meters || []).map(async (meter: any) => {
             // Skip if meter is assigned to a customer
             if (assignedMeterIds.has(meter.meter_number)) {
+              return null;
+            }
+
+            // HYTTE-FILTER: Skip hvis måler er låst til en hytte
+            if (cabinMeterIds.has(meter.meter_number)) {
               return null;
             }
 

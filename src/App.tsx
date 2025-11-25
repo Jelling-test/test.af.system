@@ -40,6 +40,7 @@ const AdminPersonale = lazy(() => import("./pages/admin/Personale"));
 const AdminIndstillinger = lazy(() => import("./pages/admin/Indstillinger"));
 const AdminBom = lazy(() => import("./pages/admin/Bom"));
 const AdminGruppeMails = lazy(() => import("./pages/admin/GruppeMails"));
+const AdminHytter = lazy(() => import("./pages/admin/Hytter"));
 const StaffBom = lazy(() => import("./pages/staff/Bom"));
 const RemoteGate = lazy(() => import("./pages/RemoteGate"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -90,6 +91,7 @@ const router = createBrowserRouter(
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/maalere" element={<AdminMaalere />} />
       <Route path="/admin/maalere/:meterId" element={<AdminMaalerDetaljer />} />
+      <Route path="/admin/hytter" element={<AdminHytter />} />
       <Route path="/admin/priser" element={<AdminPriser />} />
       <Route path="/admin/kunder" element={<AdminKunder />} />
       <Route path="/admin/bom" element={<AdminBom />} />
