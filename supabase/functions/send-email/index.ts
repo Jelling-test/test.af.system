@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const BREVO_API_KEY = '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';
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')!;
 
 interface EmailRequest {
   to: string;
