@@ -227,7 +227,7 @@ const AdminHytter = () => {
         cabin_number: formData.cabin_number,
         name: formData.name,
         cabin_type: formData.cabin_type || null,
-        meter_id: formData.meter_id || null,
+        meter_id: formData.meter_id && formData.meter_id !== "none" ? formData.meter_id : null,
         is_active: true,
       });
 
@@ -259,7 +259,7 @@ const AdminHytter = () => {
         .update({
           name: formData.name,
           cabin_type: formData.cabin_type || null,
-          meter_id: formData.meter_id || null,
+          meter_id: formData.meter_id && formData.meter_id !== "none" ? formData.meter_id : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingCabin.id);
@@ -535,7 +535,7 @@ const AdminHytter = () => {
                       <SelectValue placeholder="Vælg måler..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ingen måler</SelectItem>
+                      <SelectItem value="none">Ingen måler</SelectItem>
                       {availableMeters
                         .filter((m) => !m.is_cabin_meter)
                         .map((meter) => (
@@ -627,7 +627,7 @@ const AdminHytter = () => {
                       <SelectValue placeholder="Vælg måler..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ingen måler</SelectItem>
+                      <SelectItem value="none">Ingen måler</SelectItem>
                       {availableMeters
                         .filter(
                           (m) =>
