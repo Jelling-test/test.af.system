@@ -34,7 +34,16 @@ import {
   Zap,
   CreditCard,
   Settings,
+  RotateCcw,
+  History,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SystemSettings {
   campsite_name?: string;
@@ -75,12 +84,67 @@ const AdminIndstillinger = () => {
     oldestRecord: "N/A",
     lastCleanup: "N/A",
   });
+  
+  // Meter restore states
+  const [restoreDates, setRestoreDates] = useState<{snapshot_date: string, meter_count: number}[]>([]);
+  const [selectedRestoreDate, setSelectedRestoreDate] = useState<string>("");
+  const [restorePreview, setRestorePreview] = useState<{ieee_address: string, current_name: string, restore_name: string}[]>([]);
+  const [restoring, setRestoring] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchSystemStats();
     fetchEmailTemplates();
+    fetchRestoreDates();
   }, []);
+  
+  const fetchRestoreDates = async () => {
+    try {
+      const { data, error } = await (supabase as any).rpc('get_available_restore_dates');
+      if (error) throw error;
+      setRestoreDates(data || []);
+    } catch (error) {
+      console.error("Error fetching restore dates:", error);
+    }
+  };
+  
+  const fetchRestorePreview = async (date: string) => {
+    setLoadingPreview(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('preview_restore_from_snapshot', { p_date: date });
+      if (error) throw error;
+      setRestorePreview(data || []);
+    } catch (error) {
+      console.error("Error fetching restore preview:", error);
+      toast.error("Fejl ved hentning af preview");
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+  
+  const handleRestore = async () => {
+    if (!selectedRestoreDate) {
+      toast.error("Vælg en dato først");
+      return;
+    }
+    
+    setRestoring(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('restore_meter_names_from_snapshot', { p_date: selectedRestoreDate });
+      if (error) throw error;
+      
+      const restoredCount = data?.length || 0;
+      toast.success(`${restoredCount} målere genoprettet! MQTT rename kommandoer sendt.`);
+      setRestorePreview([]);
+      setSelectedRestoreDate("");
+    } catch (error) {
+      console.error("Error restoring meters:", error);
+      toast.error("Fejl ved gendannelse af målere");
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -711,6 +775,94 @@ const AdminIndstillinger = () => {
                     <p className="text-lg font-semibold">{systemStats.lastCleanup}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Meter Restore */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Gendan Måler-navne
+                </CardTitle>
+                <CardDescription>
+                  Gendan måler-navne fra daglige snapshots. Bruges hvis NAS/Zigbee2MQTT mister konfiguration.
+                  Systemet tager automatisk snapshot hver nat kl. 03:00 og gemmer 7 dages historik.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="restore-date">Vælg snapshot-dato</Label>
+                    <Select 
+                      value={selectedRestoreDate} 
+                      onValueChange={(value) => {
+                        setSelectedRestoreDate(value);
+                        if (value) fetchRestorePreview(value);
+                      }}
+                    >
+                      <SelectTrigger id="restore-date">
+                        <SelectValue placeholder="Vælg dato..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {restoreDates.map((item) => (
+                          <SelectItem key={item.snapshot_date} value={item.snapshot_date}>
+                            {new Date(item.snapshot_date).toLocaleDateString('da-DK')} ({item.meter_count} målere)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      onClick={handleRestore} 
+                      disabled={restoring || restorePreview.length === 0}
+                      className="w-full sm:w-auto"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      {restoring ? "Gendanner..." : "Gendan Navne"}
+                    </Button>
+                  </div>
+                </div>
+                
+                {loadingPreview && (
+                  <p className="text-sm text-muted-foreground">Indlæser preview...</p>
+                )}
+                
+                {restorePreview.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Målere der vil blive ændret ({restorePreview.length} stk):</Label>
+                    <div className="border rounded-lg max-h-48 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted sticky top-0">
+                          <tr>
+                            <th className="text-left p-2">IEEE Adresse</th>
+                            <th className="text-left p-2">Nuværende</th>
+                            <th className="text-left p-2">→</th>
+                            <th className="text-left p-2">Gendannes til</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {restorePreview.map((item) => (
+                            <tr key={item.ieee_address} className="border-t">
+                              <td className="p-2 font-mono text-xs">{item.ieee_address.substring(0, 12)}...</td>
+                              <td className="p-2 text-destructive">{item.current_name}</td>
+                              <td className="p-2">→</td>
+                              <td className="p-2 text-green-600 font-medium">{item.restore_name}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedRestoreDate && restorePreview.length === 0 && !loadingPreview && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Alle målere har korrekte navne - ingen ændringer nødvendige</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
