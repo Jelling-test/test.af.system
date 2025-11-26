@@ -121,26 +121,19 @@ Deno.serve(async (req) => {
           const accumulated = parseFloat(pkg.data.accumulated_usage || '0');
           
           // Hent nuværende meter reading hvis kunden har en måler
+          // customer.meter_id indeholder meter_number direkte (f.eks. "Kontor test", "F43")
           let currentConsumption = 0;
           if (customer?.meter_id) {
-            const { data: meterData } = await supabaseClient
-              .from('power_meters')
-              .select('meter_number')
-              .eq('id', customer.meter_id)
+            const { data: meterReading } = await supabaseClient
+              .from('meter_readings')
+              .select('energy')
+              .eq('meter_id', customer.meter_id)
+              .order('time', { ascending: false })
+              .limit(1)
               .single();
             
-            if (meterData?.meter_number) {
-              const { data: meterReading } = await supabaseClient
-                .from('meter_readings')
-                .select('energy')
-                .eq('meter_id', meterData.meter_number)
-                .order('time', { ascending: false })
-                .limit(1)
-                .single();
-              
-              const pakkeStartEnergy = pkg.data.pakke_start_energy || 0;
-              currentConsumption = (meterReading?.energy || 0) - pakkeStartEnergy;
-            }
+            const pakkeStartEnergy = pkg.data.pakke_start_energy || 0;
+            currentConsumption = (meterReading?.energy || 0) - pakkeStartEnergy;
           }
           
           const totalConsumption = accumulated + currentConsumption;
