@@ -68,22 +68,6 @@ Deno.serve(async (req) => {
     const isSeasonalCustomer = numberOfPersons === 0;
     const customerType = isSeasonalCustomer ? 'sæson' : 'kørende';
 
-    // ==================== HYTTE-LOGIK ====================
-    // Tjek om RoomName matcher en hytte i cabins tabellen
-    const { data: cabin } = await supabaseClient
-      .from('cabins')
-      .select('*')
-      .eq('cabin_number', spotNumber)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    const isCabinBooking = !!cabin;
-    let cabinMeterId = cabin?.meter_id || null;
-
-    if (isCabinBooking) {
-      console.log(`HYTTE BOOKING identificeret: ${cabin.name} (nummer ${cabin.cabin_number}), måler: ${cabinMeterId}`);
-    }
-
     if (checkedOut) {
       console.log(`Kunde ${bookingId} er checked out - sletter`);
 
@@ -203,27 +187,19 @@ Deno.serve(async (req) => {
 
       // Frigør måler og sluk strøm
       if (customer?.meter_id) {
-        // Hent meter_number fra power_meters
-        const { data: meterData } = await supabaseClient
-          .from('power_meters')
-          .select('meter_number')
-          .eq('id', customer.meter_id)
-          .single();
+        // customer.meter_id indeholder meter_number (f.eks. "Kontor test", "F43")
+        // Indsæt OFF kommando direkte med meter_number
+        await supabaseClient
+          .from('meter_commands')
+          .insert({
+            meter_id: customer.meter_id,
+            command: 'set_state',
+            value: 'OFF',
+            status: 'pending'
+          });
+        console.log(`OFF kommando sendt til måler ${customer.meter_id}`);
 
-        if (meterData?.meter_number) {
-          // Indsæt OFF kommando
-          await supabaseClient
-            .from('meter_commands')
-            .insert({
-              meter_id: meterData.meter_number,
-              command: 'set_state',
-              value: 'OFF',
-              status: 'pending'
-            });
-          console.log(`OFF kommando sendt til måler ${meterData.meter_number}`);
-        }
-
-        // Frigør måler i database
+        // Frigør måler i database (søg på meter_number, ikke id)
         await supabaseClient
           .from('power_meters')
           .update({
@@ -231,7 +207,7 @@ Deno.serve(async (req) => {
             current_customer_id: null,
             updated_at: new Date().toISOString()
           })
-          .eq('id', customer.meter_id);
+          .eq('meter_number', customer.meter_id);
         console.log(`Måler ${customer.meter_id} frigivet`);
       }
 
@@ -245,34 +221,6 @@ Deno.serve(async (req) => {
         console.error('Fejl ved sletning af nummerplader:', deleteAllError);
       } else {
         console.log(`Slettede alle nummerplader for booking ${bookingId}`);
-      }
-
-      // ==================== HYTTE CHECKOUT: Opret rengørings-schedule ====================
-      if (isCabinBooking && cabinMeterId) {
-        // Opret cleaning schedule for i morgen kl. 10:00-15:00
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const cleaningDate = tomorrow.toISOString().split('T')[0];
-        
-        const cleaningStart = new Date(`${cleaningDate}T10:00:00+01:00`);
-        const cleaningEnd = new Date(`${cleaningDate}T15:00:00+01:00`);
-
-        const { error: cleaningError } = await supabaseClient
-          .from('cabin_cleaning_schedule')
-          .insert({
-            cabin_id: cabin.id,
-            meter_id: cabinMeterId,
-            checkout_date: cleaningDate,
-            cleaning_start: cleaningStart.toISOString(),
-            cleaning_end: cleaningEnd.toISOString(),
-            status: 'scheduled'
-          });
-
-        if (cleaningError) {
-          console.error('Fejl ved oprettelse af rengørings-schedule:', cleaningError);
-        } else {
-          console.log(`Rengørings-schedule oprettet for ${cabin.name} d. ${cleaningDate} kl. 10:00-15:00`);
-        }
       }
 
     } else {
@@ -297,21 +245,20 @@ Deno.serve(async (req) => {
         }
 
         // Gem som sæson kunde MED email og phone
-        // HYTTE: Brug cabinMeterId hvis det er hytte-booking
         const seasonalData = {
           booking_id: bookingId,
           first_name: firstName,
           last_name: lastName,
           email: email,
           phone: phone,
-          customer_type: isCabinBooking ? 'hytte' : customerType,
+          customer_type: customerType,
           arrival_date: arrivalDate,
           departure_date: departureDate,
           checked_in: checkedIn,
           checked_out: checkedOut,
           spot_number: spotNumber,
           license_plates: licensePlates,
-          meter_id: isCabinBooking ? cabinMeterId : (existingRegular?.meter_id || null),
+          meter_id: existingRegular?.meter_id || null,
           updated_at: new Date().toISOString()
         };
 
@@ -343,14 +290,13 @@ Deno.serve(async (req) => {
         }
 
         // Gem som kørende kunde MED email og phone
-        // HYTTE: Brug cabinMeterId hvis det er hytte-booking
         const regularData = {
           booking_id: bookingId,
           first_name: firstName,
           last_name: lastName,
           email: email,
           phone: phone,
-          customer_type: isCabinBooking ? 'hytte' : customerType,
+          customer_type: customerType,
           arrival_date: arrivalDate,
           departure_date: departureDate,
           checked_in: checkedIn,
@@ -358,7 +304,7 @@ Deno.serve(async (req) => {
           number_of_persons: numberOfPersons,
           spot_number: spotNumber,
           license_plates: licensePlates,
-          meter_id: isCabinBooking ? cabinMeterId : (existingSeasonal?.meter_id || null),
+          meter_id: existingSeasonal?.meter_id || null,
           updated_at: new Date().toISOString()
         };
 
@@ -443,101 +389,6 @@ Deno.serve(async (req) => {
           console.error('Fejl ved opdatering af nummerplader:', updateError);
         } else {
           console.log(`Opdaterede ${existingPlates.length} nummerplader`);
-        }
-      }
-
-      // ==================== HYTTE: Prepaid pakke + Auto-tænd ====================
-      if (isCabinBooking && cabinMeterId) {
-        // Beregn antal dage
-        const arrival = new Date(arrivalDate);
-        const departure = new Date(departureDate);
-        const days = Math.ceil((departure.getTime() - arrival.getTime()) / (1000 * 60 * 60 * 24));
-        const prepaidUnits = days * 10;
-
-        // Tjek om prepaid pakke allerede findes
-        const { data: existingPrepaid } = await supabaseClient
-          .from('plugin_data')
-          .select('id')
-          .eq('module', 'pakker')
-          .filter('data->>booking_nummer', 'eq', bookingId.toString())
-          .filter('data->>pakke_kategori', 'eq', 'hytte_prepaid')
-          .maybeSingle();
-
-        if (!existingPrepaid) {
-          // Hent nuværende målerstand
-          const { data: meterReading } = await supabaseClient
-            .from('meter_readings')
-            .select('energy')
-            .eq('meter_id', cabinMeterId)
-            .order('time', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          const startEnergy = meterReading?.energy || 0;
-
-          // Opret prepaid pakke
-          const { error: prepaidError } = await supabaseClient
-            .from('plugin_data')
-            .insert({
-              organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-              module: 'pakker',
-              ref_id: bookingId.toString(),
-              key: `pakke_hytte_${bookingId}_${Date.now()}`,
-              data: {
-                booking_nummer: bookingId,
-                type_id: 'hytte-prepaid',
-                pakke_navn: `Energipakke ${days} dage - refunderes ikke ved ikke brugt`,
-                pakke_kategori: 'hytte_prepaid',
-                enheder: prepaidUnits,
-                pakke_start_energy: startEnergy,
-                status: 'aktiv',
-                betaling_metode: 'inkluderet',
-                kunde_type: 'hytte',
-                dage: days
-              }
-            });
-
-          if (prepaidError) {
-            console.error('Fejl ved oprettelse af hytte prepaid pakke:', prepaidError);
-          } else {
-            console.log(`Hytte prepaid pakke oprettet: ${prepaidUnits} enheder (${days} dage) for ${cabin.name}`);
-          }
-        }
-
-        // ==================== HYTTE: Auto-tænd ved check-in ====================
-        if (checkedIn) {
-          // Tjek om der er aktiv rengørings-session
-          const { data: activeCleaningSession } = await supabaseClient
-            .from('cabin_cleaning_schedule')
-            .select('id')
-            .eq('cabin_id', cabin.id)
-            .eq('status', 'active')
-            .maybeSingle();
-
-          if (activeCleaningSession) {
-            // Afslut rengørings-session - gæst er ankommet
-            await supabaseClient
-              .from('cabin_cleaning_schedule')
-              .update({ status: 'guest_arrived' })
-              .eq('id', activeCleaningSession.id);
-            console.log(`Rengørings-session afsluttet - gæst ankommet til ${cabin.name}`);
-          }
-
-          // Tænd strøm
-          const { error: powerOnError } = await supabaseClient
-            .from('meter_commands')
-            .insert({
-              meter_id: cabinMeterId,
-              command: 'set_state',
-              value: 'ON',
-              status: 'pending'
-            });
-
-          if (powerOnError) {
-            console.error('Fejl ved tænd-kommando til hytte:', powerOnError);
-          } else {
-            console.log(`Strøm TÆNDT for ${cabin.name} (måler ${cabinMeterId}) - gæst checked ind`);
-          }
         }
       }
     }
