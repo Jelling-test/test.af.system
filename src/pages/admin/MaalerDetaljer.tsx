@@ -443,60 +443,74 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
                               </div>
                             )}
                             
-                            {/* Individuelle pakker */}
-                            {packages.map((pkg) => {
-                              // Beregn forbrug for denne specifikke pakke
-                              const pakkeStart = pkg.data.pakke_start_energy !== null && pkg.data.pakke_start_energy !== undefined
-                                ? pkg.data.pakke_start_energy
-                                : customer.meter_start_energy || 0;
-                              const usage = currentReading.energy - pakkeStart;
-                              const remaining = pkg.data.enheder - usage;
-                              const percentUsed = (usage / pkg.data.enheder) * 100;
+                            {/* Individuelle pakker - fordel forbrug i rækkefølge */}
+                            {(() => {
+                              // Sorter pakker: sæson/reception først, derefter tillæg/stripe
+                              const sortedPakker = [...packages].sort((a: any, b: any) => {
+                                const aIsTillaeg = a.data.betaling_metode === 'stripe' || a.data.pakke_navn?.includes('tillæg');
+                                const bIsTillaeg = b.data.betaling_metode === 'stripe' || b.data.pakke_navn?.includes('tillæg');
+                                if (aIsTillaeg && !bIsTillaeg) return 1;
+                                if (!aIsTillaeg && bIsTillaeg) return -1;
+                                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                              });
+                              
+                              let remainingUsage = totalUsage;
+                              
+                              return sortedPakker.map((pkg: any) => {
+                                const enheder = parseFloat(String(pkg.data.enheder));
+                                const pkgUsage = pkg.data.status === 'aktiv' 
+                                  ? Math.max(0, Math.min(remainingUsage, enheder))
+                                  : 0;
+                                if (pkg.data.status === 'aktiv') {
+                                  remainingUsage = Math.max(0, remainingUsage - enheder);
+                                }
+                                const pkgRemaining = enheder - pkgUsage;
+                                const percentUsed = (pkgUsage / enheder) * 100;
 
-                        return (
-                          <div key={pkg.id} className="bg-muted/50 rounded-lg p-4 mb-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-medium">{pkg.data.pakke_navn}</p>
-                                  <Badge variant={pkg.data.status === 'aktiv' ? 'default' : 'secondary'}>
-                                    {pkg.data.status}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Tildelt: {new Date(pkg.created_at).toLocaleString('da-DK')}
-                                </p>
-                              </div>
-                              <Badge variant={pkg.data.betaling_metode === 'gratis' ? 'secondary' : 'outline'}>
-                                {pkg.data.betaling_metode}
-                              </Badge>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span>Forbrug:</span>
-                                <span className="font-medium">{usage.toFixed(2)} / {pkg.data.enheder} kWh</span>
-                              </div>
-                              <div className="w-full bg-secondary rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full transition-all ${
-                                    percentUsed >= 90 ? 'bg-destructive' : 
-                                    percentUsed >= 70 ? 'bg-yellow-500' : 
-                                    'bg-primary'
-                                  }`}
-                                  style={{ width: `${Math.min(percentUsed, 100)}%` }}
-                                />
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Tilbage:</span>
-                                <span className={`font-medium ${remaining <= 0 ? 'text-destructive' : ''}`}>
-                                  {Math.max(remaining, 0).toFixed(2)} kWh
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                                return (
+                                  <div key={pkg.id} className="bg-muted/50 rounded-lg p-4 mb-3">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-medium">{pkg.data.pakke_navn}</p>
+                                          <Badge variant={pkg.data.status === 'aktiv' ? 'default' : 'secondary'}>
+                                            {pkg.data.status}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                          Tildelt: {new Date(pkg.created_at).toLocaleString('da-DK')}
+                                        </p>
+                                      </div>
+                                      <Badge variant={pkg.data.betaling_metode === 'gratis' ? 'secondary' : 'outline'}>
+                                        {pkg.data.betaling_metode}
+                                      </Badge>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between text-sm">
+                                        <span>Forbrug:</span>
+                                        <span className="font-medium">{pkgUsage.toFixed(2)} / {pkg.data.enheder} kWh</span>
+                                      </div>
+                                      <div className="w-full bg-secondary rounded-full h-2">
+                                        <div 
+                                          className={`h-2 rounded-full transition-all ${
+                                            percentUsed >= 90 ? 'bg-destructive' : 
+                                            percentUsed >= 70 ? 'bg-yellow-500' : 
+                                            'bg-primary'
+                                          }`}
+                                          style={{ width: `${Math.min(percentUsed, 100)}%` }}
+                                        />
+                                      </div>
+                                      <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Tilbage:</span>
+                                        <span className={`font-medium ${pkgRemaining <= 0 ? 'text-destructive' : ''}`}>
+                                          {Math.max(pkgRemaining, 0).toFixed(2)} kWh
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            })()}
                           </>
                         );
                       })()}
