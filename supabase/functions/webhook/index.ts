@@ -442,13 +442,40 @@ Deno.serve(async (req) => {
         // Tjek om prepaid pakke allerede findes
         const { data: existingPrepaid } = await supabaseClient
           .from('plugin_data')
-          .select('id')
+          .select('id, data')
           .eq('module', 'pakker')
           .filter('data->>booking_nummer', 'eq', bookingId.toString())
           .filter('data->>pakke_kategori', 'eq', 'hytte_prepaid')
           .maybeSingle();
 
-        if (!existingPrepaid) {
+        if (existingPrepaid) {
+          // Pakke eksisterer - tjek om dage er ændret
+          const existingDays = parseInt(existingPrepaid.data?.dage || '0');
+          
+          if (existingDays !== days) {
+            // Dage er ændret - opdater pakken
+            const updatedData = {
+              ...existingPrepaid.data,
+              dage: days,
+              enheder: prepaidUnits,
+              pakke_navn: `Energipakke ${days} dage - refunderes ikke ved ikke brugt`
+            };
+
+            const { error: updateError } = await supabaseClient
+              .from('plugin_data')
+              .update({ data: updatedData })
+              .eq('id', existingPrepaid.id);
+
+            if (updateError) {
+              console.error('Fejl ved opdatering af hytte prepaid pakke:', updateError);
+            } else {
+              console.log(`Hytte prepaid pakke OPDATERET: ${existingDays} → ${days} dage (${prepaidUnits} enheder) for ${cabin.name}`);
+            }
+          } else {
+            console.log(`Hytte prepaid pakke uændret: ${days} dage for ${cabin.name}`);
+          }
+        } else {
+          // Opret ny prepaid pakke
           // Hent nuværende målerstand
           const { data: meterReading } = await supabaseClient
             .from('meter_readings')
