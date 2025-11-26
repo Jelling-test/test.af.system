@@ -52,15 +52,32 @@ const TillaegsPakke = () => {
       if (pakkeError) throw pakkeError;
       setPackages(pakkeData || []);
 
-      // Get måler info from regular_customers
-      const { data: customerData } = await (supabase as any)
+      // Get måler info from regular_customers OR seasonal_customers
+      let meterId = null;
+      
+      const { data: regularData } = await (supabase as any)
         .from('regular_customers')
         .select('meter_id')
         .eq('booking_id', session.booking_nummer)
         .maybeSingle();
 
-      if (customerData?.meter_id) {
-        setMaaler({ id: customerData.meter_id });
+      if (regularData?.meter_id) {
+        meterId = regularData.meter_id;
+      } else {
+        // Tjek også seasonal_customers
+        const { data: seasonalData } = await (supabase as any)
+          .from('seasonal_customers')
+          .select('meter_id')
+          .eq('booking_id', session.booking_nummer)
+          .maybeSingle();
+        
+        if (seasonalData?.meter_id) {
+          meterId = seasonalData.meter_id;
+        }
+      }
+
+      if (meterId) {
+        setMaaler({ id: meterId });
       }
     } catch (error) {
       console.error("Error loading data:", error);
