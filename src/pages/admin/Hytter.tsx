@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { StaffSidebar } from "@/components/staff/StaffSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,11 @@ import {
   Home,
   Zap,
   AlertTriangle,
+  Power,
+  PowerOff,
+  User,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Cabin {
   id: string;
@@ -65,6 +70,18 @@ interface Meter {
   meter_number: string;
   is_online: boolean;
   is_cabin_meter: boolean;
+  power_status?: string;
+}
+
+interface CabinGuest {
+  booking_id: number;
+  first_name: string;
+  last_name: string;
+  meter_id: string;
+}
+
+interface AdminHytterProps {
+  isStaffView?: boolean;
 }
 
 const CABIN_TYPES = [
@@ -75,10 +92,12 @@ const CABIN_TYPES = [
   "mobile 6 personer",
 ];
 
-const AdminHytter = () => {
+const AdminHytter = ({ isStaffView = false }: AdminHytterProps) => {
+  const navigate = useNavigate();
   const [cabins, setCabins] = useState<Cabin[]>([]);
   const [filteredCabins, setFilteredCabins] = useState<Cabin[]>([]);
   const [availableMeters, setAvailableMeters] = useState<Meter[]>([]);
+  const [cabinGuests, setCabinGuests] = useState<CabinGuest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -99,6 +118,7 @@ const AdminHytter = () => {
   useEffect(() => {
     fetchCabins();
     fetchAvailableMeters();
+    fetchCabinGuests();
   }, []);
 
   useEffect(() => {
@@ -132,10 +152,10 @@ const AdminHytter = () => {
 
   const fetchAvailableMeters = async () => {
     try {
-      // Get all meters
+      // Get all meters with power_status
       const { data: allMeters, error: metersError } = await (supabase as any)
         .from("power_meters")
-        .select("meter_number")
+        .select("meter_number, power_status")
         .order("meter_number", { ascending: true });
 
       if (metersError) throw metersError;
@@ -165,6 +185,7 @@ const AdminHytter = () => {
             meter_number: meter.meter_number,
             is_online: latestReading && latestReading.time > fiveMinutesAgo,
             is_cabin_meter: assignedMeterIds.has(meter.meter_number),
+            power_status: meter.power_status || 'OFF',
           };
         })
       );
@@ -172,6 +193,33 @@ const AdminHytter = () => {
       setAvailableMeters(metersWithStatus);
     } catch (error) {
       console.error("Error fetching meters:", error);
+    }
+  };
+
+  const fetchCabinGuests = async () => {
+    try {
+      // Hent gæster fra regular_customers med hytte-type
+      const { data: regularGuests } = await (supabase as any)
+        .from("regular_customers")
+        .select("booking_id, first_name, last_name, meter_id")
+        .eq("customer_type", "hytte")
+        .eq("checked_in", true);
+
+      // Hent gæster fra seasonal_customers med hytte-type
+      const { data: seasonalGuests } = await (supabase as any)
+        .from("seasonal_customers")
+        .select("booking_id, first_name, last_name, meter_id")
+        .eq("customer_type", "hytte")
+        .eq("checked_in", true);
+
+      const allGuests = [
+        ...(regularGuests || []),
+        ...(seasonalGuests || [])
+      ];
+
+      setCabinGuests(allGuests);
+    } catch (error) {
+      console.error("Error fetching cabin guests:", error);
     }
   };
 
@@ -305,10 +353,26 @@ const AdminHytter = () => {
     return meter;
   };
 
+  const getGuestForCabin = (meterId: string | null) => {
+    if (!meterId) return null;
+    return cabinGuests.find((g) => g.meter_id === meterId) || null;
+  };
+
+  const handleCabinClick = (cabin: Cabin) => {
+    const guest = getGuestForCabin(cabin.meter_id);
+    if (guest) {
+      // Naviger til kunde-detaljer med booking parameter
+      const basePath = isStaffView ? '/staff/kunde-detaljer' : '/admin/kunder';
+      navigate(`${basePath}?booking=${guest.booking_id}`);
+    } else {
+      toast.info("Ingen gæst i denne hytte");
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AdminSidebar />
+        {isStaffView ? <StaffSidebar /> : <AdminSidebar />}
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           <div className="flex items-center gap-2 mb-6">
             <SidebarTrigger />
@@ -366,10 +430,12 @@ const AdminHytter = () => {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={handleAdd}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Opret hytte
-                </Button>
+                {!isStaffView && (
+                  <Button onClick={handleAdd}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Opret hytte
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -398,15 +464,22 @@ const AdminHytter = () => {
                       <TableHead>Navn</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Måler</TableHead>
+                      <TableHead>ON/OFF</TableHead>
+                      <TableHead>Gæst</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Handlinger</TableHead>
+                      {!isStaffView && <TableHead className="text-right">Handlinger</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredCabins.map((cabin) => {
                       const meterStatus = getMeterStatus(cabin.meter_id);
+                      const guest = getGuestForCabin(cabin.meter_id);
                       return (
-                        <TableRow key={cabin.id}>
+                        <TableRow 
+                          key={cabin.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleCabinClick(cabin)}
+                        >
                           <TableCell className="font-medium">
                             {cabin.cabin_number}
                           </TableCell>
@@ -426,6 +499,31 @@ const AdminHytter = () => {
                           </TableCell>
                           <TableCell>
                             {!cabin.meter_id ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : meterStatus?.power_status === 'ON' ? (
+                              <Badge className="bg-green-500 hover:bg-green-500">
+                                <Power className="h-3 w-3 mr-1" />
+                                ON
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-gray-500">
+                                <PowerOff className="h-3 w-3 mr-1" />
+                                OFF
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {guest ? (
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-primary" />
+                                <span className="text-sm">{guest.first_name} {guest.last_name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Ledig</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {!cabin.meter_id ? (
                               <Badge variant="outline" className="text-orange-600 border-orange-600">
                                 <AlertTriangle className="h-3 w-3 mr-1" />
                                 Ingen måler
@@ -440,25 +538,33 @@ const AdminHytter = () => {
                               </Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(cabin)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(cabin)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {!isStaffView && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(cabin);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(cabin);
+                                  }}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}

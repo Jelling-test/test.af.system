@@ -4,6 +4,7 @@ import {
   Zap,
   LogOut,
   ShieldCheck,
+  Home,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -23,6 +24,7 @@ import { toast } from "sonner";
 const menuItems = [
   { title: "Dashboard", url: "/staff/dashboard", icon: LayoutDashboard },
   { title: "Kunde detaljer", url: "/staff/kunde-detaljer", icon: Package },
+  { title: "Hytter", url: "/staff/hytter", icon: Home },
   { title: "Bomstyring", url: "/staff/bom", icon: ShieldCheck },
   { title: "Se alle målere", url: "/staff/maalere", icon: Zap },
 ];

@@ -28,6 +28,7 @@ const CheckIn = lazy(() => import("./pages/staff/CheckIn"));
 const KundeDetaljer = lazy(() => import("./pages/staff/KundeDetaljer"));
 const StaffMaalere = lazy(() => import("./pages/staff/Maalere"));
 const StaffMaalerDetaljer = lazy(() => import("./pages/staff/MaalerDetaljer"));
+const StaffHytter = lazy(() => import("./pages/staff/Hytter"));
 const PlaceholderPage = lazy(() => import("./pages/staff/Placeholder"));
 const AdminLogin = lazy(() => import("./pages/admin/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -84,6 +85,7 @@ const router = createBrowserRouter(
       <Route path="/staff/bom" element={<StaffBom />} />
       <Route path="/staff/maalere" element={<StaffMaalere />} />
       <Route path="/staff/maalere/:meterId" element={<StaffMaalerDetaljer />} />
+      <Route path="/staff/hytter" element={<StaffHytter />} />
       <Route path="/staff/flyt-gaest" element={<PlaceholderPage title="Flyt gæst" description="Flyt gæster til nye pladser" />} />
       
       {/* Admin Routes */}
