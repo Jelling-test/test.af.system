@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Mail,
   Home,
+  Radio,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Målere", url: "/admin/maalere", icon: Gauge },
+    { title: "Parring", url: "/admin/parring", icon: Radio },
     { title: "Hytter", url: "/admin/hytter", icon: Home },
     { title: "Priser", url: "/admin/priser", icon: DollarSign },
     { title: "Kunder", url: "/admin/kunder", icon: Users },
