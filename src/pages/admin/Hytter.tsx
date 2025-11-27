@@ -168,27 +168,13 @@ const AdminHytter = ({ isStaffView = false }: AdminHytterProps) => {
 
       const assignedMeterIds = new Set(cabinMeters?.map((c: any) => c.meter_id) || []);
 
-      // Check online status
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-
-      const metersWithStatus = await Promise.all(
-        (allMeters || []).map(async (meter: any) => {
-          const { data: latestReading } = await (supabase as any)
-            .from("meter_readings")
-            .select("time")
-            .eq("meter_id", meter.meter_number)
-            .order("time", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          return {
-            meter_number: meter.meter_number,
-            is_online: latestReading && latestReading.time > fiveMinutesAgo,
-            is_cabin_meter: assignedMeterIds.has(meter.meter_number),
-            power_status: meter.power_status || 'OFF',
-          };
-        })
-      );
+      // Use is_online from power_meters (Z2M availability)
+      const metersWithStatus = (allMeters || []).map((meter: any) => ({
+        meter_number: meter.meter_number,
+        is_online: meter.is_online ?? true,
+        is_cabin_meter: assignedMeterIds.has(meter.meter_number),
+        power_status: meter.power_status || 'OFF',
+      }));
 
       setAvailableMeters(metersWithStatus);
     } catch (error) {

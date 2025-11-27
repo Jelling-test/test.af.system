@@ -268,17 +268,9 @@ const AdminRapporter = () => {
       const occupiedMeters = meters?.filter((m: any) => !m.is_available).length || 0;
       const utilizationRate = totalMeters > 0 ? (occupiedMeters / totalMeters) * 100 : 0;
 
-      // Count online/offline meters
-      let onlineCount = 0;
-      let offlineCount = 0;
-      meters?.forEach((m: any) => {
-        const reading = latestReadingMap.get(m.meter_number);
-        if (reading && new Date(reading.time).getTime() > Date.now() - 2 * 60 * 1000) {
-          onlineCount++;
-        } else {
-          offlineCount++;
-        }
-      });
+      // Count online/offline meters using is_online from power_meters (Z2M availability)
+      const onlineCount = meters?.filter((m: any) => m.is_online === true).length || 0;
+      const offlineCount = meters?.filter((m: any) => m.is_online === false).length || 0;
 
       const statusBreakdown: { [key: string]: number } = {
         "Ledig": meters?.filter((m: any) => m.is_available).length || 0,

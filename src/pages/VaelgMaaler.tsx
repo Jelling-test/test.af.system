@@ -121,40 +121,27 @@ const VaelgMaaler = () => {
           ...(regularCustomers?.map(c => c.meter_id) || []),
         ]);
 
-        // Filter meters that are online (have sent data within last 5 minutes) AND not assigned
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-        
-        const availableOnlineMeters = await Promise.all(
-          (meters || []).map(async (meter: any) => {
+        // Filter meters that are online (is_online from Z2M) AND not assigned
+        const availableOnlineMeters = (meters || [])
+          .filter((meter: any) => {
             // Skip if meter is assigned to a customer
             if (assignedMeterIds.has(meter.meter_number)) {
-              return null;
+              return false;
             }
 
             // HYTTE-FILTER: Skip hvis måler er låst til en hytte
             if (cabinMeterIds.has(meter.meter_number)) {
-              return null;
+              return false;
             }
 
-            const { data: latestReading } = await (supabase as any)
-              .from('meter_readings')
-              .select('time')
-              .eq('meter_id', meter.meter_number)
-              .order('time', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            // Only include meter if it has recent data AND is not assigned
-            if (latestReading && latestReading.time > fiveMinutesAgo) {
-              return {
-                id: meter.id,
-                meter_number: meter.meter_number,
-                spot_number: meter.spot_number,
-              };
-            }
-            return null;
+            // Only include meter if it is online (from Z2M availability)
+            return meter.is_online === true;
           })
-        );
+          .map((meter: any) => ({
+            id: meter.id,
+            meter_number: meter.meter_number,
+            spot_number: meter.spot_number,
+          }));
 
         const formattedMeters = availableOnlineMeters.filter(m => m !== null) as Meter[];
 

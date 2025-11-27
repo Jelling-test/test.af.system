@@ -367,31 +367,14 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
         ...(regularData?.map((c: any) => c.meter_id) || []),
       ]);
 
-      // Filter out assigned meters and check online status
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      
-      const availableMetersWithStatus = await Promise.all(
-        (allMeters || [])
-          .filter((meter: any) => !assignedMeterIds.has(meter.meter_number))
-          .map(async (meter: any) => {
-            // Check if meter is online (has recent data)
-            const { data: latestReading } = await (supabase as any)
-              .from('meter_readings')
-              .select('time')
-              .eq('meter_id', meter.meter_number)
-              .order('time', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            const isOnline = latestReading && latestReading.time > fiveMinutesAgo;
-
-            return {
-              id: meter.meter_number,
-              meter_id: meter.meter_number,
-              is_online: isOnline,
-            };
-          })
-      );
+      // Filter out assigned meters - use is_online from power_meters (Z2M availability)
+      const availableMetersWithStatus = (allMeters || [])
+        .filter((meter: any) => !assignedMeterIds.has(meter.meter_number))
+        .map((meter: any) => ({
+          id: meter.meter_number,
+          meter_id: meter.meter_number,
+          is_online: meter.is_online ?? true,
+        }));
 
       setAvailableMeters(availableMetersWithStatus);
     } catch (error) {

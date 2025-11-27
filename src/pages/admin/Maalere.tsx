@@ -64,6 +64,7 @@ interface Meter {
   state: string | null;
   linkquality: number;
   is_available: boolean;
+  is_online: boolean;
 }
 
 interface AdminMaalereProps {
@@ -170,6 +171,7 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
           state: reading?.state || null,
           linkquality: reading?.linkquality || 0,
           is_available: !isAssigned, // Ledig hvis IKKE tildelt
+          is_online: meter.is_online ?? true, // Fra Z2M availability
         };
       });
 
@@ -185,12 +187,11 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
   const filterMeters = () => {
     let filtered = meters;
 
-    // Status filter (online/offline based on last_seen)
+    // Status filter (online/offline based on is_online from Z2M)
     if (statusFilter !== "all") {
       filtered = filtered.filter((m) => {
-        const isOnline = new Date(m.last_seen).getTime() > Date.now() - 2 * 60 * 1000;
-        if (statusFilter === "online") return isOnline;
-        if (statusFilter === "offline") return !isOnline;
+        if (statusFilter === "online") return m.is_online;
+        if (statusFilter === "offline") return !m.is_online;
         if (statusFilter === "on") return m.state === "ON";
         if (statusFilter === "off") return m.state === "OFF";
         return true;
@@ -502,11 +503,9 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
                         </TableRow>
                       ) : (
                         filteredMeters.map((meter) => {
-                          // Parse last_seen safely
+                          // Parse last_seen for "sidst set" display
                           const lastSeenDate = meter.last_seen ? new Date(meter.last_seen) : null;
                           const lastSeenTime = lastSeenDate && !isNaN(lastSeenDate.getTime()) ? lastSeenDate.getTime() : 0;
-                          
-                          const isOnline = lastSeenTime > 0 && lastSeenTime > Date.now() - 2 * 60 * 1000;
                           const secondsAgo = lastSeenTime > 0 ? Math.floor((Date.now() - lastSeenTime) / 1000) : 999999999;
                           
                           return (
@@ -526,8 +525,8 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Badge variant={isOnline ? "default" : "destructive"}>
-                                    {isOnline ? "Online" : "Offline"}
+                                  <Badge variant={meter.is_online ? "default" : "destructive"}>
+                                    {meter.is_online ? "Online" : "Offline"}
                                   </Badge>
                                   {meter.state && (
                                     <Badge variant={meter.state === "ON" ? "default" : "secondary"}>
@@ -572,7 +571,7 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
                                       <Power className="mr-2 h-4 w-4" />
                                       Tænd/sluk
                                     </DropdownMenuItem>
-                                    {!isOnline && !isStaffView && (
+                                    {!meter.is_online && !isStaffView && (
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setDeleteMeter(meter);

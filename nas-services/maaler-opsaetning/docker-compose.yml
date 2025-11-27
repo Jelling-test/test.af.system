@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  pairing-assistant-backend:
+    build: .
+    container_name: pairing-assistant-backend
+    ports:
+      - "3010:3001"
+      - "8090:8080"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PORT=3001
+      - WEBSOCKET_PORT=8080
+    volumes:
+      - ./config.json:/app/config.json
+    restart: unless-stopped
+    networks:
+      - jelling-iot
+
+networks:
+  jelling-iot:
+    external: true

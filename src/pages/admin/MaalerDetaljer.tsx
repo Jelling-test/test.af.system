@@ -62,6 +62,7 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentReading, setCurrentReading] = useState<MeterReading | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [history, setHistory] = useState<MeterReading[]>([]);
@@ -89,6 +90,15 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
 
   const fetchMeterData = async () => {
     try {
+      // Get meter online status from power_meters (Z2M availability)
+      const { data: meterData } = await (supabase as any)
+        .from("power_meters")
+        .select("is_online")
+        .eq("meter_number", meterId)
+        .maybeSingle();
+
+      setIsOnline(meterData?.is_online ?? true);
+
       // Get latest reading
       const { data, error } = await (supabase as any)
         .from("meter_readings")
@@ -251,7 +261,7 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
     );
   }
 
-  const isOnline = new Date(currentReading.time).getTime() > Date.now() - 2 * 60 * 1000;
+  // isOnline is now from state (Z2M availability)
   const secondsAgo = Math.floor((Date.now() - new Date(currentReading.time).getTime()) / 1000);
   const lastSeenText = secondsAgo < 60 ? `${secondsAgo}s siden` : 
                        secondsAgo < 3600 ? `${Math.floor(secondsAgo / 60)}m siden` :

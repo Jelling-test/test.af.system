@@ -120,15 +120,11 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         .from("power_meters")
         .select("*", { count: "exact", head: true });
 
-      // Fetch online meters (readings within last 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { data: onlineMetersData } = await (supabase as any)
-        .from("meter_readings")
-        .select("meter_id")
-        .gte("time", fiveMinutesAgo);
-      
-      const uniqueOnlineMeters = new Set(onlineMetersData?.map((r: any) => r.meter_id) || []);
-      const onlineCount = uniqueOnlineMeters.size;
+      // Fetch online meters count using is_online from power_meters (Z2M availability)
+      const { count: onlineCount } = await (supabase as any)
+        .from("power_meters")
+        .select("*", { count: "exact", head: true })
+        .eq("is_online", true);
 
       // Fetch occupied meters (dynamisk beregning baseret på tildelte målere)
       const { data: regularCustomersWithMeters } = await (supabase as any)
@@ -346,24 +342,20 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         });
       }
 
-      // 3. Fetch offline meters (3 latest) - same logic as Maalere page
-      // Get latest reading for each meter
-      const { data: allLatestReadings } = await (supabase as any)
-        .rpc('get_latest_meter_readings');
+      // 3. Fetch offline meters (3 latest) - use is_online from power_meters (Z2M availability)
+      const { data: offlineMetersData } = await (supabase as any)
+        .from('power_meters')
+        .select('meter_number, updated_at')
+        .eq('is_online', false)
+        .order('updated_at', { ascending: false })
+        .limit(3);
 
-      // Filter to only offline meters (no reading in last 2 minutes - same as Maalere page)
-      const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
-      const offlineMeters = allLatestReadings
-        ?.filter((reading: any) => new Date(reading.last_reading).getTime() <= twoMinutesAgo)
-        .sort((a: any, b: any) => new Date(b.last_reading).getTime() - new Date(a.last_reading).getTime())
-        .slice(0, 3) || [];
-
-      offlineMeters.forEach((meter: any) => {
+      (offlineMetersData || []).forEach((meter: any) => {
         activities.push({
           type: "warning",
           title: "Måler offline",
-          description: `Måler ${meter.meter_id} er offline`,
-          time: meter.last_reading,
+          description: `Måler ${meter.meter_number} er offline`,
+          time: meter.updated_at,
         });
       });
 
