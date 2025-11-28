@@ -20,6 +20,8 @@ import {
   Mail,
   XCircle,
   Power,
+  Zap,
+  Clock,
 } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
@@ -61,6 +63,8 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
     maxAmpere24h: 0,
     todayRevenue: 0,
     monthRevenue: 0,
+    todayConsumption: 0,
+    latestPurchase: null as any,
   });
   const [revenueData, setRevenueData] = useState<any>(null);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
@@ -202,6 +206,55 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         const amount = p.data?.beloeb || 0;
         return sum + parseFloat(amount);
       }, 0) || 0;
+
+      // Fetch today's consumption from meter_readings_history
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
+      const { data: todayMeterHistory } = await (supabase as any)
+        .from("meter_readings_history")
+        .select("meter_id, energy")
+        .eq("snapshot_time", "23:59")
+        .gte("time", yesterdayStr + "T00:00:00")
+        .lte("time", today + "T23:59:59");
+
+      let todayConsumption = 0;
+      if (todayMeterHistory && todayMeterHistory.length > 0) {
+        // Gruppér efter dato
+        const byDate: { [date: string]: { [meterId: string]: number } } = {};
+        for (const reading of todayMeterHistory) {
+          const date = new Date(reading.time || new Date()).toISOString().split('T')[0];
+          if (!byDate[date]) byDate[date] = {};
+          byDate[date][reading.meter_id] = reading.energy;
+        }
+        
+        const dates = Object.keys(byDate).sort();
+        if (dates.length >= 2) {
+          const todayData = byDate[dates[dates.length - 1]];
+          const yesterdayData = byDate[dates[dates.length - 2]];
+          for (const [meterId, energy] of Object.entries(todayData || {})) {
+            const yEnergy = yesterdayData?.[meterId] || 0;
+            todayConsumption += Math.max(0, energy - yEnergy);
+          }
+        }
+      }
+
+      // Fetch latest purchase
+      const { data: latestPurchaseData } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "pakker")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const latestPurchase = latestPurchaseData ? {
+        booking: latestPurchaseData.data?.booking_nummer,
+        kwh: latestPurchaseData.data?.enheder,
+        time: latestPurchaseData.created_at,
+      } : null;
 
       // Fetch last 30 days revenue for chart
       const thirtyDaysAgo = new Date();
@@ -465,6 +518,8 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         maxAmpere24h: maxAmpere24h,
         todayRevenue: todayRev,
         monthRevenue: monthRev,
+        todayConsumption: Math.round(todayConsumption * 100) / 100,
+        latestPurchase: latestPurchase,
       });
 
       // Group activities by type and keep them separate (don't mix)
@@ -578,6 +633,34 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{stats.monthRevenue.toFixed(2)} DKK</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Forbrug i går</CardTitle>
+                      <Zap className="h-4 w-4 text-yellow-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.todayConsumption} kWh</div>
+                      <p className="text-xs text-muted-foreground mt-1">Total fra alle målere</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Seneste Køb</CardTitle>
+                      <Clock className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                      {stats.latestPurchase ? (
+                        <>
+                          <div className="text-2xl font-bold">{stats.latestPurchase.kwh} kWh</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Booking {stats.latestPurchase.booking} - {new Date(stats.latestPurchase.time).toLocaleDateString('da-DK')}
+                          </p>
+                        </>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">Ingen køb endnu</div>
+                      )}
                     </CardContent>
                   </Card>
                 </>
