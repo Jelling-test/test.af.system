@@ -196,6 +196,26 @@ Deno.serve(async (req) => {
         } else {
           console.log(`Checkout statistik opdateret: ${totalKwhBought} købt, ${totalKwhConsumed} brugt, ${totalKwhForfeited} fragivet`);
         }
+
+        // Log individuel checkout til audit_log (for dashboard visning)
+        await supabaseClient
+          .from('plugin_data')
+          .insert({
+            organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            module: 'checkout_log',
+            ref_id: bookingId.toString(),
+            key: 'checkout_' + bookingId + '_' + Date.now(),
+            data: {
+              booking_nummer: bookingId,
+              kunde_navn: customer ? (customer.first_name + ' ' + (customer.last_name || '')).trim() : 'Ukendt',
+              kunde_type: customerType,
+              kwh_bought: totalKwhBought,
+              kwh_consumed: totalKwhConsumed,
+              kwh_forfeited: totalKwhForfeited,
+              checkout_time: new Date().toISOString()
+            }
+          });
+        console.log('Checkout log oprettet for booking ' + bookingId);
       }
 
       // Slet alle pakker for kunden

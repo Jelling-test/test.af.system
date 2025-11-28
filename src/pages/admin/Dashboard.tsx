@@ -289,15 +289,24 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
       }
       setReceptionPackages(receptionPackagesWithNames);
 
-      // Fetch daily checkouts from daily_package_stats
+      // Fetch individual checkouts from checkout_log
       const { data: checkoutData } = await (supabase as any)
-        .from("daily_package_stats")
-        .select("date, checkouts_count, kwh_forfeited_total, kunde_type")
-        .gt("checkouts_count", 0)
-        .order("date", { ascending: false })
-        .limit(10);
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "checkout_log")
+        .order("created_at", { ascending: false })
+        .limit(8);
       
-      setDailyCheckouts(checkoutData || []);
+      const checkoutsWithDetails = (checkoutData || []).map((c: any) => ({
+        booking: c.data?.booking_nummer,
+        customerName: c.data?.kunde_navn || 'Ukendt',
+        kundeType: c.data?.kunde_type,
+        kwhForfeited: c.data?.kwh_forfeited || 0,
+        kwhConsumed: c.data?.kwh_consumed || 0,
+        time: c.data?.checkout_time || c.created_at,
+      }));
+      setDailyCheckouts(checkoutsWithDetails);
 
       // Fetch last 30 days revenue for chart
       const thirtyDaysAgo = new Date();
@@ -718,7 +727,7 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Package className="h-4 w-4" />
-                      Reception Pakker (Kontrol)
+                      Seneste pakker tildelt af Receptionen
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -762,17 +771,19 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
                         <p className="text-muted-foreground">Ingen checkouts endnu</p>
                       ) : (
                         dailyCheckouts.map((checkout, idx) => (
-                          <div key={idx} className="flex justify-between items-center border-b pb-2 last:border-0">
+                          <div key={idx} className="flex justify-between items-start border-b pb-2 last:border-0">
                             <div>
                               <p className="font-medium">
-                                {checkout.checkouts_count} checkout(s)
+                                #{checkout.booking} - {checkout.customerName}
                               </p>
                               <p className="text-muted-foreground text-xs">
-                                {parseFloat(checkout.kwh_forfeited_total).toFixed(1)} kWh frigivet ({checkout.kunde_type})
+                                {checkout.kwhForfeited.toFixed(1)} kWh frigivet ({checkout.kundeType || 'kørende'})
                               </p>
                             </div>
                             <div className="text-right text-xs text-muted-foreground">
-                              {new Date(checkout.date).toLocaleDateString('da-DK')}
+                              {new Date(checkout.time).toLocaleDateString('da-DK')}
+                              <br />
+                              {new Date(checkout.time).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
                         ))
