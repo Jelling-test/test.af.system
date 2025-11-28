@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
             key: 'checkout_' + bookingId + '_' + Date.now(),
             data: {
               booking_nummer: bookingId,
-              kunde_navn: customer ? (customer.first_name + ' ' + (customer.last_name || '')).trim() : 'Ukendt',
+              kunde_navn: (firstName + ' ' + (lastName || '')).trim() || 'Ukendt',
               kunde_type: customerType,
               kwh_bought: totalKwhBought,
               kwh_consumed: totalKwhConsumed,
