@@ -996,14 +996,23 @@ const AdminRapporter = () => {
 
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Aktive Pakker</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Aktive Pakker (seneste)</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {packageHistoryData.reduce((sum, d) => sum + (d.active_packages || 0), 0)}
+                          {(() => {
+                            // Find seneste dato og sum aktive pakker for den dato
+                            const latestDate = packageHistoryData.reduce((max, d) => d.date > max ? d.date : max, '');
+                            const latestData = packageHistoryData.filter(d => d.date === latestDate);
+                            return latestData.reduce((sum, d) => sum + (d.active_packages || 0), 0);
+                          })()}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {packageHistoryData.reduce((sum, d) => sum + parseFloat(d.kwh_remaining_total || '0'), 0).toFixed(0)} kWh tilbage
+                          {(() => {
+                            const latestDate = packageHistoryData.reduce((max, d) => d.date > max ? d.date : max, '');
+                            const latestData = packageHistoryData.filter(d => d.date === latestDate);
+                            return latestData.reduce((sum, d) => sum + parseFloat(d.kwh_remaining_total || '0'), 0).toFixed(0);
+                          })()} kWh tilbage
                         </p>
                       </CardContent>
                     </Card>
