@@ -750,9 +750,9 @@ const AdminRapporter = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  Forbrugsrapport
+                  Forbrugsrapport - kun historisk data
                 </CardTitle>
-                <CardDescription>Analyser strømforbrug</CardDescription>
+                <CardDescription>Analyser strømforbrug (vælg datoer før i dag)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -768,6 +768,7 @@ const AdminRapporter = () => {
                         mode="single"
                         selected={consumptionStartDate}
                         onSelect={(date) => date && setConsumptionStartDate(date)}
+                        disabled={(date) => date >= new Date(new Date().setHours(0, 0, 0, 0))}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -786,6 +787,7 @@ const AdminRapporter = () => {
                         mode="single"
                         selected={consumptionEndDate}
                         onSelect={(date) => date && setConsumptionEndDate(date)}
+                        disabled={(date) => date >= new Date(new Date().setHours(0, 0, 0, 0))}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -888,9 +890,9 @@ const AdminRapporter = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Pakke Historik & Analyse
+                  Pakke Historik & Analyse - kun historisk data
                 </CardTitle>
-                <CardDescription>Analyser pakke salg, forbrug og checkout data over tid</CardDescription>
+                <CardDescription>Analyser pakke salg, forbrug og checkout data over tid (vælg datoer før i dag)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Date Range Filter */}
@@ -915,6 +917,7 @@ const AdminRapporter = () => {
                           mode="single"
                           selected={packageHistoryStartDate}
                           onSelect={setPackageHistoryStartDate}
+                          disabled={(date) => date >= new Date(new Date().setHours(0, 0, 0, 0))}
                           initialFocus
                         />
                       </PopoverContent>
@@ -941,6 +944,7 @@ const AdminRapporter = () => {
                           mode="single"
                           selected={packageHistoryEndDate}
                           onSelect={setPackageHistoryEndDate}
+                          disabled={(date) => date >= new Date(new Date().setHours(0, 0, 0, 0))}
                           initialFocus
                         />
                       </PopoverContent>

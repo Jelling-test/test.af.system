@@ -207,38 +207,20 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         return sum + parseFloat(amount);
       }, 0) || 0;
 
-      // Fetch today's consumption from meter_readings_history
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      // Fetch current power consumption (live W from all meters)
+      const { data: currentPowerReadings } = await (supabase as any)
+        .from("meter_readings")
+        .select("meter_id, power")
+        .order("time", { ascending: false });
       
-      const { data: todayMeterHistory } = await (supabase as any)
-        .from("meter_readings_history")
-        .select("meter_id, energy")
-        .eq("snapshot_time", "23:59")
-        .gte("time", yesterdayStr + "T00:00:00")
-        .lte("time", today + "T23:59:59");
-
-      let todayConsumption = 0;
-      if (todayMeterHistory && todayMeterHistory.length > 0) {
-        // Gruppér efter dato
-        const byDate: { [date: string]: { [meterId: string]: number } } = {};
-        for (const reading of todayMeterHistory) {
-          const date = new Date(reading.time || new Date()).toISOString().split('T')[0];
-          if (!byDate[date]) byDate[date] = {};
-          byDate[date][reading.meter_id] = reading.energy;
-        }
-        
-        const dates = Object.keys(byDate).sort();
-        if (dates.length >= 2) {
-          const todayData = byDate[dates[dates.length - 1]];
-          const yesterdayData = byDate[dates[dates.length - 2]];
-          for (const [meterId, energy] of Object.entries(todayData || {})) {
-            const yEnergy = yesterdayData?.[meterId] || 0;
-            todayConsumption += Math.max(0, energy - yEnergy);
-          }
+      // Get latest reading per meter and sum power
+      const latestPowerByMeter: { [meterId: string]: number } = {};
+      for (const reading of currentPowerReadings || []) {
+        if (!latestPowerByMeter[reading.meter_id]) {
+          latestPowerByMeter[reading.meter_id] = reading.power || 0;
         }
       }
+      const currentTotalPower = Object.values(latestPowerByMeter).reduce((sum, p) => sum + p, 0);
 
       // Fetch latest purchase
       const { data: latestPurchaseData } = await (supabase as any)
@@ -518,7 +500,7 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         maxAmpere24h: maxAmpere24h,
         todayRevenue: todayRev,
         monthRevenue: monthRev,
-        todayConsumption: Math.round(todayConsumption * 100) / 100,
+        todayConsumption: Math.round(currentTotalPower),
         latestPurchase: latestPurchase,
       });
 
@@ -637,12 +619,12 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Forbrug i går</CardTitle>
+                      <CardTitle className="text-sm font-medium">Aktuelt Forbrug</CardTitle>
                       <Zap className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{stats.todayConsumption} kWh</div>
-                      <p className="text-xs text-muted-foreground mt-1">Total fra alle målere</p>
+                      <div className="text-2xl font-bold">{stats.todayConsumption} W</div>
+                      <p className="text-xs text-muted-foreground mt-1">Live fra alle målere</p>
                     </CardContent>
                   </Card>
                   <Card>
