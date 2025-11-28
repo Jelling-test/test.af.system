@@ -68,6 +68,8 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
   });
   const [revenueData, setRevenueData] = useState<any>(null);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [receptionPackages, setReceptionPackages] = useState<any[]>([]);
+  const [dailyCheckouts, setDailyCheckouts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isStaffView) {
@@ -237,6 +239,65 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         kwh: latestPurchaseData.data?.enheder,
         time: latestPurchaseData.created_at,
       } : null;
+
+      // Fetch recent reception packages (for staff control)
+      const { data: receptionPkgs } = await (supabase as any)
+        .from("plugin_data")
+        .select("*")
+        .eq("organization_id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        .eq("module", "pakker")
+        .filter("data->>betaling_metode", "eq", "reception")
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      // Get customer names for reception packages
+      const receptionPackagesWithNames = [];
+      for (const pkg of receptionPkgs || []) {
+        const bookingId = pkg.data?.booking_nummer;
+        let customerName = "Ukendt";
+        
+        // Try seasonal_customers first
+        const { data: seasonal } = await (supabase as any)
+          .from("seasonal_customers")
+          .select("first_name, last_name")
+          .eq("booking_id", bookingId)
+          .maybeSingle();
+        
+        if (seasonal) {
+          customerName = `${seasonal.first_name} ${seasonal.last_name || ''}`.trim();
+        } else {
+          // Try regular_customers
+          const { data: regular } = await (supabase as any)
+            .from("regular_customers")
+            .select("first_name, last_name")
+            .eq("booking_id", bookingId)
+            .maybeSingle();
+          
+          if (regular) {
+            customerName = `${regular.first_name} ${regular.last_name || ''}`.trim();
+          }
+        }
+        
+        receptionPackagesWithNames.push({
+          booking: bookingId,
+          customerName,
+          kwh: pkg.data?.enheder,
+          packageName: pkg.data?.pakke_navn || `${pkg.data?.enheder} kWh`,
+          time: pkg.created_at,
+          kundeType: pkg.data?.kunde_type,
+        });
+      }
+      setReceptionPackages(receptionPackagesWithNames);
+
+      // Fetch daily checkouts from daily_package_stats
+      const { data: checkoutData } = await (supabase as any)
+        .from("daily_package_stats")
+        .select("date, checkouts_count, kwh_forfeited_total, kunde_type")
+        .gt("checkouts_count", 0)
+        .order("date", { ascending: false })
+        .limit(10);
+      
+      setDailyCheckouts(checkoutData || []);
 
       // Fetch last 30 days revenue for chart
       const thirtyDaysAgo = new Date();
@@ -648,6 +709,79 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
                 </>
               )}
             </div>
+
+            {/* Reception Pakker & Checkouts - Staff Control */}
+            {!isStaffView && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Seneste Reception Pakker */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Reception Pakker (Kontrol)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 text-sm">
+                      {receptionPackages.length === 0 ? (
+                        <p className="text-muted-foreground">Ingen reception pakker</p>
+                      ) : (
+                        receptionPackages.map((pkg, idx) => (
+                          <div key={idx} className="flex justify-between items-start border-b pb-2 last:border-0">
+                            <div>
+                              <p className="font-medium">
+                                #{pkg.booking} - {pkg.customerName}
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                {pkg.kwh} kWh ({pkg.kundeType || 'kørende'})
+                              </p>
+                            </div>
+                            <div className="text-right text-xs text-muted-foreground">
+                              {new Date(pkg.time).toLocaleDateString('da-DK')}
+                              <br />
+                              {new Date(pkg.time).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Seneste Checkouts / Frigivne */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Power className="h-4 w-4" />
+                      Seneste Checkouts (Frigivet)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 text-sm">
+                      {dailyCheckouts.length === 0 ? (
+                        <p className="text-muted-foreground">Ingen checkouts endnu</p>
+                      ) : (
+                        dailyCheckouts.map((checkout, idx) => (
+                          <div key={idx} className="flex justify-between items-center border-b pb-2 last:border-0">
+                            <div>
+                              <p className="font-medium">
+                                {checkout.checkouts_count} checkout(s)
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                {parseFloat(checkout.kwh_forfeited_total).toFixed(1)} kWh frigivet ({checkout.kunde_type})
+                              </p>
+                            </div>
+                            <div className="text-right text-xs text-muted-foreground">
+                              {new Date(checkout.date).toLocaleDateString('da-DK')}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Seneste Aktivitet */}
             <Card className="mb-6">
