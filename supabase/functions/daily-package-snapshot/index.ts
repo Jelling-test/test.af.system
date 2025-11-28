@@ -7,109 +7,237 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const today = new Date().toISOString().split('T')[0];
-    console.log(`Running daily package snapshot for ${today}`);
+    console.log("=== Daily Package Snapshot for " + today + " ===");
 
-    // Process for each kunde_type and betalings_metode combination
-    const kundeTypes = ['kørende', 'sæson'];
-    const betalingsMetoder = ['stripe', 'reception', 'gratis'];
+    // Hent ALLE aktive pakker
+    const { data: allPackages, error: pkgError } = await supabase
+      .from('plugin_data')
+      .select('*')
+      .eq('module', 'pakker')
+      .eq('data->>status', 'aktiv');
 
-    for (const kundeType of kundeTypes) {
-      for (const betalingsMetode of betalingsMetoder) {
-        console.log(`Processing ${kundeType} - ${betalingsMetode}`);
+    if (pkgError) throw pkgError;
+    console.log(`Found ${allPackages?.length || 0} active packages`);
 
-        // Get all active packages for this kunde_type
-        const { data: packages } = await supabase
-          .from('plugin_data')
-          .select('*')
-          .eq('module', 'pakker')
-          .eq('data->>status', 'aktiv')
-          .eq('data->>kunde_type', kundeType)
-          .eq('data->>betaling_metode', betalingsMetode);
+    // Gruppér pakker efter booking_nummer for at summere enheder per kunde
+    const customerPackages: Record<string, any[]> = {};
+    for (const pkg of allPackages || []) {
+      const bookingNummer = pkg.data.booking_nummer?.toString();
+      if (!bookingNummer) continue;
+      if (!customerPackages[bookingNummer]) {
+        customerPackages[bookingNummer] = [];
+      }
+      customerPackages[bookingNummer].push(pkg);
+    }
 
-        if (!packages || packages.length === 0) {
-          console.log(`No active packages for ${kundeType} - ${betalingsMetode}`);
-          continue;
+    // Beregn faktisk forbrug for hver kunde (samme logik som check-low-power)
+    const results: Record<string, { bought: number, consumed: number, remaining: number, kundeType: string, betalingsMetode: string }> = {};
+
+    for (const [bookingNummer, packages] of Object.entries(customerPackages)) {
+      // Hent kundens måler
+      let meterId: string | null = null;
+      let startEnergy = 0;
+
+      const { data: regCust } = await supabase
+        .from('regular_customers')
+        .select('meter_id, meter_start_energy')
+        .eq('booking_id', bookingNummer)
+        .maybeSingle();
+
+      if (regCust?.meter_id) {
+        meterId = regCust.meter_id;
+        startEnergy = regCust.meter_start_energy || 0;
+      } else {
+        const { data: seaCust } = await supabase
+          .from('seasonal_customers')
+          .select('meter_id, meter_start_energy')
+          .eq('booking_id', bookingNummer)
+          .maybeSingle();
+        if (seaCust?.meter_id) {
+          meterId = seaCust.meter_id;
+          startEnergy = seaCust.meter_start_energy || 0;
         }
+      }
 
-        // Simply sum up all enheder from active packages
-        let totalKwhRemaining = 0;
-        const activePackagesCount = packages.length;
+      // Beregn total købte enheder for denne kunde
+      let totalBought = 0;
+      let kundeType = 'kørende';
+      let betalingsMetode = 'reception';
 
-        for (const pkg of packages) {
-          const kwhBought = parseFloat(pkg.data.enheder || '0');
-          totalKwhRemaining += kwhBought;
+      for (const pkg of packages) {
+        totalBought += parseFloat(pkg.data.enheder || '0');
+        kundeType = pkg.data.kunde_type || 'kørende';
+        betalingsMetode = pkg.data.betaling_metode || 'reception';
+      }
+
+      // Beregn forbrug fra måler
+      let consumed = 0;
+      if (meterId) {
+        const { data: reading } = await supabase
+          .from('meter_readings')
+          .select('energy')
+          .eq('meter_id', meterId)
+          .order('time', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (reading) {
+          const currentEnergy = parseFloat(reading.energy || '0');
+          consumed = Math.max(0, currentEnergy - startEnergy);
         }
+      }
 
-        // Check if row exists, then UPDATE only snapshot fields
-        const { data: existing } = await supabase
+      // Tilføj accumulated_usage fra pakker (fra tidligere målere ved flytning)
+      for (const pkg of packages) {
+        consumed += parseFloat(pkg.data.accumulated_usage || '0');
+      }
+
+      const remaining = Math.max(0, totalBought - consumed);
+
+      results[bookingNummer] = {
+        bought: totalBought,
+        consumed,
+        remaining,
+        kundeType,
+        betalingsMetode
+      };
+
+      console.log(`Kunde ${bookingNummer}: Købt=${totalBought}, Forbrugt=${consumed.toFixed(2)}, Tilbage=${remaining.toFixed(2)}`);
+    }
+
+    // Aggregér per kunde_type og betalings_metode
+    const aggregated: Record<string, { 
+      activePackages: number, 
+      totalBought: number, 
+      totalConsumed: number, 
+      totalRemaining: number 
+    }> = {};
+
+    for (const [_, data] of Object.entries(results)) {
+      const key = `${data.kundeType}|${data.betalingsMetode}`;
+      if (!aggregated[key]) {
+        aggregated[key] = { activePackages: 0, totalBought: 0, totalConsumed: 0, totalRemaining: 0 };
+      }
+      aggregated[key].activePackages++;
+      aggregated[key].totalBought += data.bought;
+      aggregated[key].totalConsumed += data.consumed;
+      aggregated[key].totalRemaining += data.remaining;
+    }
+
+    // Gem til daily_package_stats
+    for (const [key, stats] of Object.entries(aggregated)) {
+      const [kundeType, betalingsMetode] = key.split('|');
+
+      const { data: existing } = await supabase
+        .from('daily_package_stats')
+        .select('*')
+        .eq('organization_id', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+        .eq('date', today)
+        .eq('kunde_type', kundeType)
+        .eq('betalings_metode', betalingsMetode)
+        .maybeSingle();
+
+      const snapshotData = {
+        active_packages: stats.activePackages,
+        kwh_bought_total: stats.totalBought,
+        kwh_consumed_total: stats.totalConsumed,
+        kwh_remaining_total: stats.totalRemaining,
+        updated_at: new Date().toISOString()
+      };
+
+      let error;
+      if (existing) {
+        const result = await supabase
           .from('daily_package_stats')
-          .select('*')
+          .update(snapshotData)
           .eq('organization_id', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
           .eq('date', today)
           .eq('kunde_type', kundeType)
-          .eq('betalings_metode', betalingsMetode)
-          .maybeSingle();
-        
-        let snapshotError;
-        if (existing) {
-          // UPDATE - only update snapshot fields
-          const { error } = await supabase
-            .from('daily_package_stats')
-            .update({
-              active_packages: activePackagesCount,
-              kwh_remaining_total: totalKwhRemaining,
-              kwh_consumed_today: 0,
-              updated_at: new Date().toISOString()
-            })
-            .eq('organization_id', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-            .eq('date', today)
-            .eq('kunde_type', kundeType)
-            .eq('betalings_metode', betalingsMetode);
-          snapshotError = error;
-        } else {
-          // INSERT - create new row with all fields
-          const { error } = await supabase
-            .from('daily_package_stats')
-            .insert({
-              organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-              date: today,
-              kunde_type: kundeType,
-              betalings_metode: betalingsMetode,
-              active_packages: activePackagesCount,
-              kwh_remaining_total: totalKwhRemaining,
-              kwh_consumed_today: 0,
-              updated_at: new Date().toISOString()
-            });
-          snapshotError = error;
-        }
+          .eq('betalings_metode', betalingsMetode);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('daily_package_stats')
+          .insert({
+            organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            date: today,
+            kunde_type: kundeType,
+            betalings_metode: betalingsMetode,
+            ...snapshotData
+          });
+        error = result.error;
+      }
 
-        if (snapshotError) {
-          console.error(`Error updating snapshot for ${kundeType} - ${betalingsMetode}:`, snapshotError);
-        } else {
-          console.log(`Snapshot updated: ${activePackagesCount} packages, ${totalKwhRemaining.toFixed(2)} kWh remaining`);
-        }
+      if (error) {
+        console.error(`Error saving ${kundeType}/${betalingsMetode}:`, error);
+      } else {
+        console.log(`Saved ${kundeType}/${betalingsMetode}: ${stats.activePackages} kunder, Købt=${stats.totalBought}, Forbrugt=${stats.totalConsumed.toFixed(2)}, Tilbage=${stats.totalRemaining.toFixed(2)}`);
       }
     }
+
+    // Beregn total måler-forbrug fra meter_readings_history for sammenligning
+    const { data: meterHistory } = await supabase
+      .from('meter_readings_history')
+      .select('meter_id, energy')
+      .eq('snapshot_time', '23:59')
+      .gte('time', `${today}T00:00:00`)
+      .lt('time', `${today}T23:59:59`);
+
+    // Hent gårsdagens data for at beregne dagligt forbrug
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    const { data: yesterdayHistory } = await supabase
+      .from('meter_readings_history')
+      .select('meter_id, energy')
+      .eq('snapshot_time', '23:59')
+      .gte('time', `${yesterdayStr}T00:00:00`)
+      .lt('time', `${yesterdayStr}T23:59:59`);
+
+    let totalMeterConsumption = 0;
+    if (meterHistory && yesterdayHistory) {
+      const yesterdayMap = new Map(yesterdayHistory.map(m => [m.meter_id, m.energy]));
+      for (const meter of meterHistory) {
+        const yesterdayEnergy = yesterdayMap.get(meter.meter_id) || 0;
+        totalMeterConsumption += Math.max(0, meter.energy - yesterdayEnergy);
+      }
+    }
+
+    // Total pakke-forbrug
+    const totalPackageConsumed = Object.values(results).reduce((sum, r) => sum + r.consumed, 0);
+    const driftConsumption = Math.max(0, totalMeterConsumption - totalPackageConsumed);
+
+    console.log(`=== TOTALER ===`);
+    console.log(`Total måler-forbrug i dag: ${totalMeterConsumption.toFixed(2)} kWh`);
+    console.log(`Total pakke-forbrug: ${totalPackageConsumed.toFixed(2)} kWh`);
+    console.log(`Drift-forbrug (kontor, fælleshus osv.): ${driftConsumption.toFixed(2)} kWh`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Daily package snapshot completed for ${today}` 
+        date: today,
+        summary: {
+          total_customers: Object.keys(results).length,
+          total_meter_kwh: totalMeterConsumption,
+          total_package_kwh: totalPackageConsumed,
+          drift_kwh: driftConsumption
+        },
+        details: aggregated
       }),
       { 
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   } catch (error) {
@@ -118,7 +246,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   }

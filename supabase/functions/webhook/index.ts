@@ -3,6 +3,23 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 console.log("Webhook funktion startet");
 
+// ==================== HJÆLPEFUNKTION: Dansk tid ====================
+function getDanishTime(): Date {
+  // Få nuværende tid i dansk tidzone
+  const now = new Date();
+  const danishTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Copenhagen' }));
+  return danishTime;
+}
+
+function getDanishHour(): number {
+  return getDanishTime().getHours();
+}
+
+function getTodayDanish(): string {
+  const danish = getDanishTime();
+  return danish.toISOString().split('T')[0];
+}
+
 Deno.serve(async (req) => {
   try {
     console.log(`${req.method} request modtaget`);
@@ -234,13 +251,17 @@ Deno.serve(async (req) => {
 
       // ==================== HYTTE CHECKOUT: Opret rengørings-schedule ====================
       if (isCabinBooking && cabinMeterId) {
-        // Opret cleaning schedule for i morgen kl. 10:00-15:00
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const cleaningDate = tomorrow.toISOString().split('T')[0];
+        // Opret cleaning schedule for SAMME dag
+        const cleaningDate = getTodayDanish();
+        const currentHour = getDanishHour();
         
         const cleaningStart = new Date(`${cleaningDate}T10:00:00+01:00`);
         const cleaningEnd = new Date(`${cleaningDate}T15:00:00+01:00`);
+        
+        // Bestem status baseret på klokkeslæt
+        // Før 10:00 = scheduled (cron tænder)
+        // 10:00-13:00 = active (tænd strøm med det samme)
+        const cleaningStatus = (currentHour >= 10 && currentHour < 15) ? 'active' : 'scheduled';
 
         const { error: cleaningError } = await supabaseClient
           .from('cabin_cleaning_schedule')
@@ -250,19 +271,280 @@ Deno.serve(async (req) => {
             checkout_date: cleaningDate,
             cleaning_start: cleaningStart.toISOString(),
             cleaning_end: cleaningEnd.toISOString(),
-            status: 'scheduled'
+            status: cleaningStatus
           });
 
         if (cleaningError) {
           console.error('Fejl ved oprettelse af rengørings-schedule:', cleaningError);
         } else {
-          console.log(`Rengørings-schedule oprettet for ${cabin.name} d. ${cleaningDate} kl. 10:00-15:00`);
+          console.log(`Rengørings-schedule oprettet for ${cabin.name} d. ${cleaningDate} kl. 10:00-15:00 (status: ${cleaningStatus})`);
+          
+          // Hvis aktiv status, tænd strøm med det samme (rengøring starter nu)
+          if (cleaningStatus === 'active') {
+            await supabaseClient
+              .from('meter_commands')
+              .insert({
+                meter_id: cabinMeterId,
+                command: 'set_state',
+                value: 'ON',
+                status: 'pending'
+              });
+            console.log(`Rengørings-strøm TÆNDT for ${cabin.name} (kl. ${currentHour}:xx)`);
+          }
         }
       }
 
     } else {
       // Opret eller opdater kunde
       let movedCustomer = false;
+
+      // ==================== FLYTNING: Find eksisterende kunde og måler ====================
+      const { data: existingRegularForMove } = await supabaseClient
+        .from('regular_customers')
+        .select('meter_id')
+        .eq('booking_id', bookingId)
+        .maybeSingle();
+      
+      const { data: existingSeasonalForMove } = await supabaseClient
+        .from('seasonal_customers')
+        .select('meter_id')
+        .eq('booking_id', bookingId)
+        .maybeSingle();
+      
+      const existingMeterId = existingRegularForMove?.meter_id || existingSeasonalForMove?.meter_id;
+      const isExistingCabinMeter = existingMeterId && existingMeterId.toLowerCase().startsWith('hytte');
+      const isNewCabinBooking = isCabinBooking && cabinMeterId;
+      const meterChanged = existingMeterId && existingMeterId !== cabinMeterId;
+
+      // ==================== FRAFLYTNING FRA HYTTE ====================
+      // Trigger: Eksisterende måler er hytte OG (ny destination er anden hytte ELLER ikke-hytte)
+      if (isExistingCabinMeter && meterChanged) {
+        console.log(`HYTTE FRAFLYTNING: Kunde ${bookingId} forlader ${existingMeterId}`);
+        
+        // Find den gamle hytte for rengøring
+        const { data: oldCabin } = await supabaseClient
+          .from('cabins')
+          .select('id, name')
+          .eq('meter_id', existingMeterId)
+          .maybeSingle();
+        
+        // 1. Sluk strøm på gammel hytte
+        await supabaseClient
+          .from('meter_commands')
+          .insert({
+            meter_id: existingMeterId,
+            command: 'set_state',
+            value: 'OFF',
+            status: 'pending'
+          });
+        console.log(`OFF kommando sendt til gammel hytte: ${existingMeterId}`);
+        
+        // 2. Opret rengørings-schedule for gammel hytte (SAMME dag)
+        if (oldCabin) {
+          const cleaningDate = getTodayDanish();
+          const currentHour = getDanishHour();
+          const cleaningStart = new Date(`${cleaningDate}T10:00:00+01:00`);
+          const cleaningEnd = new Date(`${cleaningDate}T15:00:00+01:00`);
+          const cleaningStatus = (currentHour >= 10 && currentHour < 15) ? 'active' : 'scheduled';
+          
+          await supabaseClient
+            .from('cabin_cleaning_schedule')
+            .insert({
+              cabin_id: oldCabin.id,
+              meter_id: existingMeterId,
+              checkout_date: cleaningDate,
+              cleaning_start: cleaningStart.toISOString(),
+              cleaning_end: cleaningEnd.toISOString(),
+              status: cleaningStatus
+            });
+          console.log(`Rengørings-schedule oprettet for ${oldCabin.name} (fraflytning) - status: ${cleaningStatus}`);
+          
+          // Tænd rengørings-strøm hvis inden for vindue
+          if (cleaningStatus === 'active') {
+            await supabaseClient
+              .from('meter_commands')
+              .insert({
+                meter_id: existingMeterId,
+                command: 'set_state',
+                value: 'ON',
+                status: 'pending'
+              });
+            console.log(`Rengørings-strøm TÆNDT for ${oldCabin.name}`);
+          }
+        }
+        
+        // 3. Akkumuler forbrug fra gammel måler og opdater pakke
+        const { data: existingPackages } = await supabaseClient
+          .from('plugin_data')
+          .select('id, data')
+          .eq('module', 'pakker')
+          .filter('data->>booking_nummer', 'eq', bookingId.toString())
+          .eq('data->>status', 'aktiv');
+        
+        if (existingPackages && existingPackages.length > 0) {
+          // Hent forbrug fra gammel måler
+          const { data: oldMeterReading } = await supabaseClient
+            .from('meter_readings')
+            .select('energy')
+            .eq('meter_id', existingMeterId)
+            .order('time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          for (const pkg of existingPackages) {
+            const oldStartEnergy = pkg.data.pakke_start_energy || 0;
+            const currentEnergy = oldMeterReading?.energy || 0;
+            const consumedOnOldMeter = Math.max(0, currentEnergy - oldStartEnergy);
+            const previousAccumulated = parseFloat(pkg.data.accumulated_usage || '0');
+            const newAccumulated = previousAccumulated + consumedOnOldMeter;
+            
+            // Hent startstand for NY måler (hvis der er en)
+            let newStartEnergy = 0;
+            if (cabinMeterId || existingMeterId !== cabinMeterId) {
+              const newMeterId = cabinMeterId || null;
+              if (newMeterId) {
+                const { data: newMeterReading } = await supabaseClient
+                  .from('meter_readings')
+                  .select('energy')
+                  .eq('meter_id', newMeterId)
+                  .order('time', { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+                newStartEnergy = newMeterReading?.energy || 0;
+              }
+            }
+            
+            // Opdater pakke
+            const updatedData = {
+              ...pkg.data,
+              accumulated_usage: newAccumulated.toFixed(2),
+              pakke_start_energy: newStartEnergy,
+              previous_meter: existingMeterId,
+              moved_at: new Date().toISOString()
+            };
+            
+            // Hvis flytning fra hytte til camping: Konverter pakke-kategori
+            if (!isNewCabinBooking) {
+              updatedData.pakke_kategori = 'standard';
+              updatedData.kunde_type = customerType;
+              console.log(`Pakke konverteret fra hytte_prepaid til standard`);
+            }
+            
+            await supabaseClient
+              .from('plugin_data')
+              .update({ data: updatedData })
+              .eq('id', pkg.id);
+            
+            console.log(`Pakke opdateret: Akkumuleret ${newAccumulated.toFixed(2)} kWh, ny start: ${newStartEnergy}`);
+          }
+        }
+        
+        // 4. Hvis ny destination er hytte: Tænd strøm
+        if (isNewCabinBooking) {
+          await supabaseClient
+            .from('meter_commands')
+            .insert({
+              meter_id: cabinMeterId,
+              command: 'set_state',
+              value: 'ON',
+              status: 'pending'
+            });
+          console.log(`ON kommando sendt til ny hytte: ${cabinMeterId}`);
+        }
+      }
+
+      // ==================== TILFLYTNING TIL HYTTE (fra camping) ====================
+      // Trigger: Ny destination er hytte OG (ingen eksisterende måler ELLER eksisterende er ikke hytte)
+      if (isNewCabinBooking && (!existingMeterId || !isExistingCabinMeter)) {
+        console.log(`HYTTE TILFLYTNING: Kunde ${bookingId} flytter til ${cabinMeterId} fra ${existingMeterId || 'ingen måler'}`);
+        
+        // 1. Akkumuler forbrug fra gammel måler (hvis findes)
+        if (existingMeterId) {
+          const { data: oldMeterReading } = await supabaseClient
+            .from('meter_readings')
+            .select('energy')
+            .eq('meter_id', existingMeterId)
+            .order('time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          const { data: existingPackages } = await supabaseClient
+            .from('plugin_data')
+            .select('id, data')
+            .eq('module', 'pakker')
+            .filter('data->>booking_nummer', 'eq', bookingId.toString())
+            .eq('data->>status', 'aktiv');
+          
+          if (existingPackages && existingPackages.length > 0) {
+            // Hent startstand for ny hytte-måler (kun én gang)
+            const { data: newMeterReading } = await supabaseClient
+              .from('meter_readings')
+              .select('energy')
+              .eq('meter_id', cabinMeterId)
+              .order('time', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            const newStartEnergy = newMeterReading?.energy || 0;
+            
+            // Beregn hytte-dage (fra nu til afrejse) - kun én gang
+            const today = new Date(getTodayDanish());
+            const departure = new Date(departureDate);
+            const remainingDays = Math.max(1, Math.ceil((departure.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+            const additionalUnits = remainingDays * 10;
+            
+            // Kun tilføj hytte-dage til den PRIMÆRE pakke (første/ældste)
+            // Andre pakker får kun akkumulering og ny startstand
+            let primaryPackageUpdated = false;
+            
+            for (const pkg of existingPackages) {
+              const oldStartEnergy = pkg.data.pakke_start_energy || 0;
+              const currentEnergy = oldMeterReading?.energy || 0;
+              const consumedOnOldMeter = Math.max(0, currentEnergy - oldStartEnergy);
+              const previousAccumulated = parseFloat(pkg.data.accumulated_usage || '0');
+              const newAccumulated = previousAccumulated + consumedOnOldMeter;
+              
+              const currentUnits = parseFloat(pkg.data.enheder || '0');
+              
+              // Opdater pakke: Akkumuler + konverter til hytte
+              const updatedData = {
+                ...pkg.data,
+                accumulated_usage: newAccumulated.toFixed(2),
+                pakke_start_energy: newStartEnergy,
+                pakke_kategori: 'hytte_prepaid',
+                kunde_type: 'hytte',
+                previous_meter: existingMeterId,
+                moved_at: new Date().toISOString()
+              };
+              
+              // Kun tilføj hytte-enheder til den FØRSTE pakke
+              if (!primaryPackageUpdated) {
+                updatedData.enheder = currentUnits + additionalUnits;
+                updatedData.cabin_days_added = remainingDays;
+                primaryPackageUpdated = true;
+                console.log(`PRIMÆR pakke opgraderet til hytte: +${additionalUnits} enheder (${remainingDays} dage), total: ${currentUnits + additionalUnits}`);
+              } else {
+                console.log(`Sekundær pakke opdateret (ingen ekstra enheder): ${currentUnits} enheder`);
+              }
+              
+              await supabaseClient
+                .from('plugin_data')
+                .update({ data: updatedData })
+                .eq('id', pkg.id);
+            }
+          }
+        }
+        
+        // 2. Tænd strøm på ny hytte
+        await supabaseClient
+          .from('meter_commands')
+          .insert({
+            meter_id: cabinMeterId,
+            command: 'set_state',
+            value: 'ON',
+            status: 'pending'
+          });
+        console.log(`ON kommando sendt til hytte: ${cabinMeterId}`);
+      }
 
       if (isSeasonalCustomer) {
         // Tjek om kunden findes som regular customer
@@ -518,21 +800,22 @@ Deno.serve(async (req) => {
 
         // ==================== HYTTE: Auto-tænd ved check-in ====================
         if (checkedIn) {
-          // Tjek om der er aktiv rengørings-session
-          const { data: activeCleaningSession } = await supabaseClient
+          // Tjek om der er aktiv ELLER scheduled rengørings-session for denne hytte
+          const { data: pendingCleaningSessions } = await supabaseClient
             .from('cabin_cleaning_schedule')
-            .select('id')
+            .select('id, status')
             .eq('cabin_id', cabin.id)
-            .eq('status', 'active')
-            .maybeSingle();
+            .in('status', ['active', 'scheduled']);
 
-          if (activeCleaningSession) {
-            // Afslut rengørings-session - gæst er ankommet
-            await supabaseClient
-              .from('cabin_cleaning_schedule')
-              .update({ status: 'guest_arrived' })
-              .eq('id', activeCleaningSession.id);
-            console.log(`Rengørings-session afsluttet - gæst ankommet til ${cabin.name}`);
+          if (pendingCleaningSessions && pendingCleaningSessions.length > 0) {
+            // Afslut alle pending rengørings-sessioner - gæst er ankommet/flyttet ind
+            for (const session of pendingCleaningSessions) {
+              await supabaseClient
+                .from('cabin_cleaning_schedule')
+                .update({ status: 'guest_arrived' })
+                .eq('id', session.id);
+              console.log(`Rengørings-session (${session.status}) annulleret - gæst ankommet til ${cabin.name}`);
+            }
           }
 
           // Tænd strøm
