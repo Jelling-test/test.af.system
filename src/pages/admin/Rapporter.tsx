@@ -169,18 +169,35 @@ const AdminRapporter = () => {
       const endDateStr = consumptionEndDate.toISOString().split('T')[0];
 
       // Hent måler-historik for perioden (faktisk forbrug fra målere)
+      // Vi henter fra dagen FØR startdato for at kunne beregne forbrug
+      const dayBefore = new Date(consumptionStartDate);
+      dayBefore.setDate(dayBefore.getDate() - 1);
+      const dayBeforeStr = dayBefore.toISOString().split('T')[0];
+
       const { data: meterHistory, error: meterError } = await (supabase as any)
         .from("meter_readings_history")
         .select("meter_id, energy, time")
         .eq("snapshot_time", "23:59")
-        .gte("time", startDateStr + "T00:00:00")
+        .gte("time", dayBeforeStr + "T00:00:00")
         .lte("time", endDateStr + "T23:59:59")
         .order("time", { ascending: true });
 
       if (meterError) throw meterError;
 
+      // Hent hvilke målere der har aktive kunder
+      const { data: regularCustomers } = await (supabase as any)
+        .from("regular_customers")
+        .select("meter_id");
+      const { data: seasonalCustomers } = await (supabase as any)
+        .from("seasonal_customers")
+        .select("meter_id");
+
+      const customerMeterIds = new Set([
+        ...(regularCustomers || []).map((c: any) => c.meter_id),
+        ...(seasonalCustomers || []).map((c: any) => c.meter_id)
+      ].filter(Boolean));
+
       // Beregn dagligt forbrug fra måler-data
-      const dailyConsumption: { [date: string]: number } = {};
       const meterByDate: { [date: string]: { [meterId: string]: number } } = {};
 
       for (const reading of meterHistory || []) {
@@ -189,53 +206,50 @@ const AdminRapporter = () => {
         meterByDate[date][reading.meter_id] = reading.energy;
       }
 
+      // Beregn dagligt forbrug og opdel i kunde vs drift
+      const dailyData: { date: string; meterKwh: number; customerKwh: number }[] = [];
       const dates = Object.keys(meterByDate).sort();
+      
       for (let i = 1; i < dates.length; i++) {
         const today = dates[i];
         const yesterday = dates[i - 1];
-        let dayTotal = 0;
+        
+        // Spring over hvis dato er før startdato
+        if (today < startDateStr) continue;
+        
+        let meterTotal = 0;
+        let customerTotal = 0;
 
         for (const [meterId, energy] of Object.entries(meterByDate[today])) {
           const yesterdayEnergy = meterByDate[yesterday]?.[meterId] || 0;
-          dayTotal += Math.max(0, energy - yesterdayEnergy);
+          const consumption = Math.max(0, energy - yesterdayEnergy);
+          meterTotal += consumption;
+          
+          // Tjek om denne måler har en kunde
+          if (customerMeterIds.has(meterId)) {
+            customerTotal += consumption;
+          }
         }
-        dailyConsumption[today] = dayTotal;
+        
+        dailyData.push({
+          date: today,
+          meterKwh: Math.round(meterTotal * 100) / 100,
+          customerKwh: Math.round(customerTotal * 100) / 100
+        });
       }
 
-      const totalConsumption = Object.values(dailyConsumption).reduce((a, b) => a + b, 0);
-      const daysWithData = Object.keys(dailyConsumption).length;
-      const averagePerDay = daysWithData > 0 ? totalConsumption / daysWithData : 0;
-
-      // Hent pakke-statistik for perioden
-      const { data: packageStats, error: pkgError } = await (supabase as any)
-        .from("daily_package_stats")
-        .select("*")
-        .gte("date", startDateStr)
-        .lte("date", endDateStr);
-
-      if (pkgError) throw pkgError;
-
-      const totalPackageConsumed = packageStats?.reduce((sum: number, p: any) => {
-        return sum + parseFloat(p.kwh_consumed_total || 0);
-      }, 0) || 0;
-
-      const driftConsumption = Math.max(0, totalConsumption - totalPackageConsumed);
-
-      // Beregn forbrug per tidsperiode baseret på gennemsnit
-      const peakTimes = {
-        "00:00-06:00": Math.round(totalConsumption * 0.08),
-        "06:00-12:00": Math.round(totalConsumption * 0.22),
-        "12:00-18:00": Math.round(totalConsumption * 0.38),
-        "18:00-24:00": Math.round(totalConsumption * 0.32),
-      };
+      const totalMeterKwh = dailyData.reduce((sum, d) => sum + d.meterKwh, 0);
+      const totalCustomerKwh = dailyData.reduce((sum, d) => sum + d.customerKwh, 0);
+      const driftKwh = Math.max(0, totalMeterKwh - totalCustomerKwh);
+      const averagePerDay = dailyData.length > 0 ? totalMeterKwh / dailyData.length : 0;
 
       setConsumptionData({
-        totalConsumption: Math.round(totalConsumption * 100) / 100,
+        totalConsumption: Math.round(totalMeterKwh * 100) / 100,
         averagePerCustomer: Math.round(averagePerDay * 100) / 100,
-        packageCount: daysWithData,
-        peakTimes,
-        packageConsumed: Math.round(totalPackageConsumed * 100) / 100,
-        driftConsumption: Math.round(driftConsumption * 100) / 100,
+        packageCount: dailyData.length,
+        packageConsumed: Math.round(totalCustomerKwh * 100) / 100,
+        driftConsumption: Math.round(driftKwh * 100) / 100,
+        dailyData: dailyData,
       });
 
       toast.success("Forbrugsrapport genereret");
@@ -363,7 +377,66 @@ const AdminRapporter = () => {
   };
 
   const handleExportExcel = (reportType: string) => {
-    toast.info(`${reportType} eksporteres til Excel (ikke implementeret endnu)`);
+    if (reportType === "Forbrugsrapport" && consumptionData?.dailyData) {
+      // Opret CSV data
+      const headers = ["Dato", "Total Måler (kWh)", "Kunde-Forbrug (kWh)", "Drift-Forbrug (kWh)"];
+      const rows = consumptionData.dailyData.map((d: any) => [
+        format(new Date(d.date), "dd/MM/yyyy"),
+        d.meterKwh.toFixed(2),
+        d.customerKwh.toFixed(2),
+        (d.meterKwh - d.customerKwh).toFixed(2)
+      ]);
+      
+      // Tilføj totaler
+      rows.push([]);
+      rows.push(["TOTAL", consumptionData.totalConsumption.toFixed(2), consumptionData.packageConsumed.toFixed(2), consumptionData.driftConsumption.toFixed(2)]);
+      rows.push(["Gns. per dag", consumptionData.averagePerCustomer.toFixed(2), "", ""]);
+      
+      // Konverter til CSV
+      const csvContent = [headers, ...rows].map(row => row.join(";")).join("\n");
+      
+      // Download
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `forbrugsrapport_${format(consumptionStartDate, "yyyy-MM-dd")}_${format(consumptionEndDate, "yyyy-MM-dd")}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success("Forbrugsrapport eksporteret til CSV");
+    } else {
+      toast.info(`${reportType} eksporteres til Excel (ikke implementeret endnu)`);
+    }
+  };
+  
+  // Graf data for dagligt forbrug
+  const getDailyConsumptionChartData = () => {
+    if (!consumptionData?.dailyData) return null;
+
+    const labels = consumptionData.dailyData.map((d: any) =>
+      format(new Date(d.date), "dd/MM", { locale: da })
+    );
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Total Måler-Forbrug (kWh)",
+          data: consumptionData.dailyData.map((d: any) => d.meterKwh),
+          backgroundColor: "rgba(59, 130, 246, 0.8)",
+          borderColor: "rgb(59, 130, 246)",
+          borderWidth: 1,
+        },
+        {
+          label: "Kunde-Forbrug (kWh)",
+          data: consumptionData.dailyData.map((d: any) => d.customerKwh),
+          backgroundColor: "rgba(16, 185, 129, 0.8)",
+          borderColor: "rgb(16, 185, 129)",
+          borderWidth: 1,
+        },
+      ],
+    };
   };
 
   const handleSendToAccounting = () => {
@@ -770,20 +843,40 @@ const AdminRapporter = () => {
                       </Card>
                     </div>
 
-                    {getPeakTimesChartData() && (
+                    {getDailyConsumptionChartData() && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-sm">Peak Forbrugstider</CardTitle>
+                          <CardTitle className="text-sm">Dagligt Forbrug</CardTitle>
+                          <CardDescription>Blå = Total måler-forbrug, Grøn = Kunde-forbrug</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Bar options={chartOptions} data={getPeakTimesChartData()!} />
+                          <Bar 
+                            options={{
+                              responsive: true,
+                              plugins: {
+                                legend: {
+                                  position: 'top' as const,
+                                },
+                              },
+                              scales: {
+                                y: {
+                                  beginAtZero: true,
+                                  title: {
+                                    display: true,
+                                    text: 'kWh'
+                                  }
+                                }
+                              }
+                            }} 
+                            data={getDailyConsumptionChartData()!} 
+                          />
                         </CardContent>
                       </Card>
                     )}
 
                     <Button variant="outline" onClick={() => handleExportExcel("Forbrugsrapport")}>
                       <Download className="mr-2 h-4 w-4" />
-                      Eksporter til Excel
+                      Eksporter til CSV
                     </Button>
                   </div>
                 )}
