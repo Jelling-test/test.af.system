@@ -1,0 +1,422 @@
+2025-11-25 11:08:18.014 WARNING (Recorder) [homeassistant.components.recorder.util] The system could not validate that the sqlite3 database at //config/home-assistant_v2.db was shutdown cleanly
+2025-11-25 11:09:22.602 WARNING (MainThread) [homeassistant.bootstrap] Waiting on integrations to complete setup: {('mqtt', '01K92WX7ZNYY4SHMEJ2AWRXY66'): 1670.894589066, ('met', '01K92WVJQ119GPEPXC0983SWWM'): 1672.410379332, ('shopping_list', '01K92WVJ9KG6JCXHA39BEMYKZY'): 1672.897125976}
+2025-11-25 11:58:56.965 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-25 11:58:57.218 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.219 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.220 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xbc8d7efffe21ab04, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=42>'
+2025-11-25 11:58:57.220 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-25 11:58:57.220 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-25 11:58:57.222 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.222 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.222 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.222 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.223 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:58:57.224 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:01.266 ERROR (Recorder) [homeassistant.components.recorder.table_managers.statistics_meta] Cannot rename statistic_id `sensor.f42_power_2` to `sensor.f42_power` because the new statistic_id is already in use
+2025-11-25 11:59:01.296 ERROR (Recorder) [homeassistant.components.recorder.table_managers.statistics_meta] Cannot rename statistic_id `sensor.f42_current_2` to `sensor.f42_current` because the new statistic_id is already in use
+2025-11-25 11:59:01.303 ERROR (Recorder) [homeassistant.components.recorder.table_managers.statistics_meta] Cannot rename statistic_id `sensor.f42_voltage_2` to `sensor.f42_voltage` because the new statistic_id is already in use
+2025-11-25 11:59:01.316 ERROR (Recorder) [homeassistant.components.recorder.table_managers.statistics_meta] Cannot rename statistic_id `sensor.f42_energy_2` to `sensor.f42_energy` because the new statistic_id is already in use
+2025-11-25 11:59:10.674 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xdc8e95fffe93c2f7, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=47>'
+2025-11-25 11:59:10.675 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-25 11:59:10.675 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-25 11:59:10.675 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-25 11:59:10.675 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-25 11:59:10.676 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-25 11:59:10.676 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-25 11:59:10.676 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.676 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.677 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-25 11:59:10.677 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-25 11:59:10.695 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.696 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.696 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.696 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.696 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.696 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.697 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.698 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:10.698 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:10.698 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.489 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-25 11:59:22.490 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-25 11:59:22.490 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xdc8e95fffe93c512, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=194>'
+2025-11-25 11:59:22.490 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-25 11:59:22.491 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-25 11:59:22.491 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-25 11:59:22.491 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-25 11:59:22.491 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-25 11:59:22.492 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-25 11:59:22.492 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.492 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.505 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.505 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.506 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.506 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.506 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.506 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.507 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.507 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.507 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.507 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.508 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.508 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.508 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.508 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:22.508 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:22.509 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.976 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-25 11:59:41.976 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-25 11:59:41.977 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-25 11:59:41.977 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-25 11:59:41.977 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xdc8e95fffe93cb6f, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=43>'
+2025-11-25 11:59:41.977 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-25 11:59:41.978 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-25 11:59:41.978 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.978 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.979 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-25 11:59:41.979 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-25 11:59:41.991 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.992 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.992 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.992 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.992 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.993 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.993 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:41.994 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.910 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-25 11:59:54.910 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-25 11:59:54.911 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-25 11:59:54.911 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-25 11:59:54.911 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-25 11:59:54.912 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-25 11:59:54.912 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xdc8e95fffe93c5e2, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=43>'
+2025-11-25 11:59:54.912 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.912 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.912 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-25 11:59:54.913 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-25 11:59:54.927 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.928 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.928 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.928 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.929 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.929 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.930 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.930 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.930 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.930 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.930 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.932 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.932 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.932 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-25 11:59:54.932 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-25 11:59:54.932 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-26 12:58:00.033 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity binary_sensor.zigbee2mqtt_bridge_connection_state_3 uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_connection_state"` option with `"default_entity_id": "binary_sensor.zigbee2mqtt_bridge_connection_state"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.644 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity binary_sensor.zigbee2mqtt_bridge_restart_required uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_restart_required"` option with `"default_entity_id": "binary_sensor.zigbee2mqtt_bridge_restart_required"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.648 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity button.zigbee2mqtt_bridge_restart_3 uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_restart"` option with `"default_entity_id": "button.zigbee2mqtt_bridge_restart"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.652 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity select.zigbee2mqtt_bridge_log_level_3 uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_log_level"` option with `"default_entity_id": "select.zigbee2mqtt_bridge_log_level"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.655 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.zigbee2mqtt_bridge_version_3 uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_version"` option with `"default_entity_id": "sensor.zigbee2mqtt_bridge_version"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.658 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.zigbee2mqtt_bridge_coordinator_version uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_coordinator_version"` option with `"default_entity_id": "sensor.zigbee2mqtt_bridge_coordinator_version"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.663 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.zigbee2mqtt_bridge_network_map uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_network_map"` option with `"default_entity_id": "sensor.zigbee2mqtt_bridge_network_map"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.670 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.zigbee2mqtt_bridge_permit_join_timeout uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_permit_join_timeout"` option with `"default_entity_id": "sensor.zigbee2mqtt_bridge_permit_join_timeout"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 12:58:00.675 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity switch.zigbee2mqtt_bridge_permit_join_3 uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "zigbee2mqtt_bridge_permit_join"` option with `"default_entity_id": "switch.zigbee2mqtt_bridge_permit_join"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 13:03:23.004 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.0x180df9fffe9a69de_linkquality uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "0x180df9fffe9a69de_linkquality"` option with `"default_entity_id": "sensor.0x180df9fffe9a69de_linkquality"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-26 13:04:31.748 WARNING (MainThread) [homeassistant.components.mqtt.entity] The configuration for entity sensor.repeater_plads_225_230_linkquality uses the deprecated option `object_id` to set the default entity id. Replace the `"object_id": "repeater_plads_225.230_linkquality"` option with `"default_entity_id": "sensor.repeater_plads_225.230_linkquality"` in your published discovery configuration to fix this issue, or contact the maintainer of Zigbee2MQTT that published this config to fix this. This will stop working in Home Assistant Core 2026.4
+2025-11-27 12:35:53.238 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.582 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:35:53.762 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:35:53.762 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/Kontor test, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=3143>'
+2025-11-27 12:35:53.763 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:35:53.763 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:35:53.763 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:35:53.764 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:35:53.764 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:35:53.764 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:35:53.766 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.767 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.769 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.771 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.772 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.773 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:35:53.776 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 12:40:56.504 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.505 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.505 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:40:56.507 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:40:56.508 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:40:56.508 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:40:56.508 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xdc8e95fffe93cb6f, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=5>'
+2025-11-27 12:40:56.509 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:40:56.509 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:40:56.509 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:40:56.511 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:40:56.525 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.526 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.526 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.526 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.526 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.526 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.527 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.527 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.527 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.527 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.528 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.529 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.530 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.530 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:40:56.530 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:40:56.531 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.145 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.145 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.145 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:46:44.145 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:46:44.146 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:46:44.146 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:46:44.146 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:46:44.146 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:46:44.146 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:46:44.147 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt/0xbc8d7efffe2fba75, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=8>'
+2025-11-27 12:46:44.147 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:46:44.163 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.164 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.164 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.165 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.165 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.165 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.166 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.166 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.166 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.166 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.166 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.167 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.167 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.167 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:46:44.167 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:46:44.167 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.133 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:47:20.133 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:47:20.133 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:47:20.134 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area3/0xbc8d7efffe2fba75, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=2>'
+2025-11-27 12:47:20.134 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.134 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.134 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:47:20.134 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:47:20.135 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:47:20.135 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:47:20.135 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:47:20.147 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.148 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.148 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.148 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.149 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.149 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.149 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.149 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.149 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.150 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.150 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.150 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.151 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.151 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:20.151 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:20.151 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.976 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.976 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.977 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:47:47.977 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:47:47.977 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:47:47.977 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:47:47.977 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:47:47.978 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:47:47.978 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:47:47.978 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:47:47.979 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area3/0xbc8d7efffe14a600, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=1>'
+2025-11-27 12:47:47.988 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.990 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.990 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.990 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.991 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.992 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.993 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:47:47.993 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:47:47.993 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.279 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 12:48:13.279 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 12:48:13.280 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 12:48:13.280 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.280 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.280 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 12:48:13.280 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 12:48:13.281 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 12:48:13.281 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area3/0xbc8d7efffe13f4a5, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=1>'
+2025-11-27 12:48:13.281 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 12:48:13.282 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 12:48:13.297 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.297 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.298 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.299 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 12:48:13.300 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 12:48:13.300 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.565 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 13:24:26.584 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.584 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.584 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 13:24:26.585 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 13:24:26.585 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 13:24:26.585 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 13:24:26.585 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 13:24:26.586 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 13:24:26.586 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 13:24:26.586 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area2/0xbc8d7efffe15119c, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=7>'
+2025-11-27 13:24:26.644 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.644 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.644 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.645 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.645 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.645 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.645 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.645 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.646 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:26.647 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:26.647 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:49.239 WARNING (MainThread) [homeassistant.helpers.template] Template variable warning: 'dict object' has no attribute 'energy' when rendering '{{ value_json.energy }}'
+2025-11-27 13:24:55.127 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 13:24:55.128 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.128 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.128 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 13:24:55.128 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 13:24:55.129 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 13:24:55.129 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area2/0xbc8d7efffe133110, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=8>'
+2025-11-27 13:24:55.129 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 13:24:55.130 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 13:24:55.130 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 13:24:55.130 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 13:24:55.162 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.163 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.163 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.163 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.164 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.164 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.164 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.164 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.164 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:24:55.165 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:24:55.166 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:50.519 WARNING (MainThread) [homeassistant.helpers.template] Template variable warning: 'dict object' has no attribute 'power_outage_memory' when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 13:25:59.040 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 13:25:59.041 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 13:25:59.041 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 13:25:59.041 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 13:25:59.041 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 13:25:59.042 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 13:25:59.042 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 13:25:59.042 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.042 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.043 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 13:25:59.043 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area2/0x781c9dfffee44bb3, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=8>'
+2025-11-27 13:25:59.077 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.078 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.078 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.079 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.079 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.079 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.080 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.080 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.080 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.080 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.081 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.081 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.081 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.081 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 13:25:59.082 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 13:25:59.082 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.021 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power_outage_memory }}'
+2025-11-27 20:14:16.309 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.power_outage_memory }})
+2025-11-27 20:14:16.309 WARNING (MainThread) [homeassistant.components.mqtt.update] Unable to process payload '' for topic zigbee2mqtt_area2/0x781c9dfffee44952, with value template 'Template<template=({"latest_version":"{{ value_json['update']['latest_version'] }}","installed_version":"{{ value_json['update']['installed_version'] }}","update_percentage":{{ value_json['update'].get('progress', 'null') }},"in_progress":{{ (value_json['update']['state'] == 'updating')|lower }}}) renders=648>'
+2025-11-27 20:14:16.309 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.energy }}'
+2025-11-27 20:14:16.309 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.voltage }}'
+2025-11-27 20:14:16.310 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.310 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.310 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.power }}'
+2025-11-27 20:14:16.310 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.current }}'
+2025-11-27 20:14:16.311 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.indicator_mode }}'
+2025-11-27 20:14:16.311 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.indicator_mode }})
+2025-11-27 20:14:16.311 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.312 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.312 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.312 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.312 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.312 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.313 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.314 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.314 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.314 ERROR (MainThread) [homeassistant.helpers.template] Template variable error: 'value_json' is undefined when rendering '{{ value_json.state }}'
+2025-11-27 20:14:16.315 ERROR (MainThread) [homeassistant.helpers.template] Error parsing value: 'value_json' is undefined (value: , template: {{ value_json.state }})
+2025-11-27 20:14:16.316 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.512 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.515 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.518 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.520 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.524 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.526 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>
+2025-11-27 20:14:16.530 WARNING (MainThread) [homeassistant.helpers.dispatcher] Unable to remove unknown dispatcher <bound method MqttAvailabilityMixin.async_mqtt_connection_state_changed of <entity unknown.unknown=unknown>>

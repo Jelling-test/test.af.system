@@ -1,0 +1,78 @@
+# TRIN-FOR-TRIN GUIDE TIL AT STARTE COMMAND PROCESSOR
+
+## 1. Upload filer til NAS via File Station
+
+Gå til: http://192.168.9.61:5000
+
+Naviger til: docker/telegraf/
+
+Upload disse filer:
+- command-processor.py
+- Dockerfile.command-processor
+- docker-compose-command-processor.yml
+- .env.command-processor.UPLOAD_DENNE
+
+## 2. Omdøb .env fil via File Station
+
+Omdøb: .env.command-processor.UPLOAD_DENNE
+Til: .env.command-processor
+
+## 3. SSH til NAS og byg container
+
+ssh jc@192.168.9.61
+cd /volume1/docker/telegraf
+
+# Byg Docker image
+sudo docker build -f Dockerfile.command-processor -t mqtt-command-processor .
+
+# Start container
+sudo docker run -d \
+  --name mqtt-command-processor \
+  --restart unless-stopped \
+  --network host \
+  --env-file .env.command-processor \
+  -e MQTT_HOST=192.168.9.61 \
+  -e MQTT_PORT=1890 \
+  -e MQTT_USER=homeassistant \
+  -e MQTT_PASSWORD=7200Grindsted! \
+  -e SUPABASE_URL=https://jkmqliztlhmfyejhmuil.supabase.co \
+  mqtt-command-processor
+
+# Se logs
+sudo docker logs -f mqtt-command-processor
+
+## 4. Forventet output i logs
+
+Du skulle se:
+- "Starting Command Processor"
+- "Connected to MQTT broker"
+- "Polling every 2 seconds"
+
+## 5. Test tænd/sluk
+
+Gå til: http://localhost:8080/admin/maalere
+
+Klik på ⋮ ved "test maaler 1" og vælg "Tænd/sluk"
+
+I logs skulle du se:
+- "Found 1 pending commands"
+- "Processing command: set_state for test maaler 1 = ON"
+- "Published to zigbee2mqtt/test maaler 1/set: {"state": "ON"}"
+
+## 6. Stop/genstart container
+
+# Stop
+sudo docker stop mqtt-command-processor
+
+# Start
+sudo docker start mqtt-command-processor
+
+# Genstart
+sudo docker restart mqtt-command-processor
+
+# Se logs
+sudo docker logs -f mqtt-command-processor
+
+# Slet container (hvis du vil starte forfra)
+sudo docker stop mqtt-command-processor
+sudo docker rm mqtt-command-processor

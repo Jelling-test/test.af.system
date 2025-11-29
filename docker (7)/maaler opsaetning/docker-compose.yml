@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mqtt-config-service:
+    build: .
+    container_name: mqtt-config-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    restart: unless-stopped
+    networks:
+      - jelling-iot
+
+networks:
+  jelling-iot:
+    external: true
+    name: jelling-iot_ha_net

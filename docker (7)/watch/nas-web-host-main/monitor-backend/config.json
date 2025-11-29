@@ -1,0 +1,68 @@
+{
+  "areas": [
+    {
+      "id": "1",
+      "name": "Område 1",
+      "mqtt_topic": "zigbee2mqtt",
+      "web_port": 8082,
+      "controller_ip": "192.168.0.254",
+      "controller_port": 6638,
+      "max_devices": 60
+    },
+    {
+      "id": "2",
+      "name": "Område 2",
+      "mqtt_topic": "zigbee2mqtt_area2",
+      "web_port": 8083,
+      "controller_ip": "192.168.1.35",
+      "controller_port": 6638,
+      "max_devices": 60
+    },
+    {
+      "id": "3",
+      "name": "Område 3",
+      "mqtt_topic": "zigbee2mqtt_area3",
+      "web_port": 8084,
+      "controller_ip": "192.168.1.36",
+      "controller_port": 6638,
+      "max_devices": 60
+    },
+    {
+      "id": "4",
+      "name": "Område 4",
+      "mqtt_topic": "zigbee2mqtt_area4",
+      "web_port": 8085,
+      "controller_ip": "192.168.1.37",
+      "controller_port": 6638,
+      "max_devices": 60
+    },
+    {
+      "id": "5",
+      "name": "Område 5",
+      "mqtt_topic": "zigbee2mqtt_area5",
+      "web_port": 8086,
+      "controller_ip": "192.168.1.38",
+      "controller_port": 6638,
+      "max_devices": 60
+    },
+    {
+      "id": "6",
+      "name": "Område 6",
+      "mqtt_topic": "zigbee2mqtt_area6",
+      "web_port": 8087,
+      "controller_ip": "192.168.1.39",
+      "controller_port": 6638,
+      "max_devices": 60
+    }
+  ],
+  "mqtt": {
+    "broker": "192.168.9.61:1890",
+    "username": "homeassistant",
+    "password": "7200Grindsted!"
+  },
+  "pairing": {
+    "interview_timeout": 300,
+    "cooldown_duration": 120,
+    "permit_join_duration": 254
+  }
+}

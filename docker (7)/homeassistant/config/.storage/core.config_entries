@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "minor_version": 5,
+  "key": "core.config_entries",
+  "data": {
+    "entries": [
+      {"created_at":"2025-11-02T15:30:48.824839+00:00","data":{},"disabled_by":null,"discovery_keys":{},"domain":"sun","entry_id":"01K92K2HVR1TMNKQ5TJR59RQWR","minor_version":1,"modified_at":"2025-11-02T15:30:48.824845+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"import","subentries":[],"title":"Sun","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T15:30:49.260875+00:00","data":{},"disabled_by":null,"discovery_keys":{},"domain":"go2rtc","entry_id":"01K92K2J9CAZ03S9X3V7946CMP","minor_version":1,"modified_at":"2025-11-02T15:30:49.260879+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"system","subentries":[],"title":"go2rtc","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T15:30:49.293866+00:00","data":{},"disabled_by":null,"discovery_keys":{},"domain":"backup","entry_id":"01K92K2JAD3S14YGB6GFTRGBM9","minor_version":1,"modified_at":"2025-11-02T15:30:49.293871+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"system","subentries":[],"title":"Backup","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T18:21:45.651248+00:00","data":{},"disabled_by":null,"discovery_keys":{},"domain":"shopping_list","entry_id":"01K92WVJ9KG6JCXHA39BEMYKZY","minor_version":1,"modified_at":"2025-11-02T18:21:45.651255+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"onboarding","subentries":[],"title":"Shopping list","unique_id":"shopping_list","version":1},
+      {"created_at":"2025-11-02T18:21:46.052082+00:00","data":{},"disabled_by":null,"discovery_keys":{},"domain":"radio_browser","entry_id":"01K92WVJP4DCV04T6T8MA5G0CX","minor_version":1,"modified_at":"2025-11-02T18:21:46.052088+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"onboarding","subentries":[],"title":"Radio Browser","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T18:21:46.061859+00:00","data":{"language":"en","tld":"com"},"disabled_by":null,"discovery_keys":{},"domain":"google_translate","entry_id":"01K92WVJPDEN0JGR0J578WN9Z5","minor_version":1,"modified_at":"2025-11-02T18:21:46.061864+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"onboarding","subentries":[],"title":"Google Translate text-to-speech","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T18:21:46.081544+00:00","data":{"track_home":true},"disabled_by":null,"discovery_keys":{},"domain":"met","entry_id":"01K92WVJQ119GPEPXC0983SWWM","minor_version":1,"modified_at":"2025-11-02T18:21:46.081549+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"onboarding","subentries":[],"title":"Home","unique_id":null,"version":1},
+      {"created_at":"2025-11-02T18:22:40.629404+00:00","data":{"broker":"192.168.9.61","password":"7200Grindsted!","port":1890,"username":"homeassistant"},"disabled_by":null,"discovery_keys":{},"domain":"mqtt","entry_id":"01K92WX7ZNYY4SHMEJ2AWRXY66","minor_version":2,"modified_at":"2025-11-02T18:22:40.629410+00:00","options":{},"pref_disable_new_entities":false,"pref_disable_polling":false,"source":"user","subentries":[],"title":"192.168.9.61","unique_id":null,"version":1}
+    ]
+  }
+}

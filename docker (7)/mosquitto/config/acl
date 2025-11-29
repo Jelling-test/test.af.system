@@ -1,0 +1,36 @@
+user camera_pub
+topic write axis/+/event/tns:axis/CameraApplicationPlatform/ALPV.AllPlates
+
+user power_device
+topic read power/+/cmd/#
+topic write power/+/tele/#
+topic write power/+/state/#
+
+user agent_ctrl
+topic read axis/+/event/tns:axis/CameraApplicationPlatform/ALPV.AllPlates
+topic write gate/+/cmd/#
+
+user admin_readonly
+topic read #
+
+# Gate agent til bomstyring
+user gate_agent
+topic read gate/jelling/cmd/#
+topic write gate/jelling/state/#
+topic write gate/jelling/logs/#
+topic read axis/+/event/tns:axis/CameraApplicationPlatform/ALPV.AllPlates
+
+user z2m
+topic write zigbee2mqtt/#
+topic read homeassistant/#
+
+user ha_core
+topic read #
+topic write #
+user homeassistant
+topic read #
+topic write #
+
+user homeassistant
+topic read #
+topic write #

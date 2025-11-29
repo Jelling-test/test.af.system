@@ -1,0 +1,238 @@
+﻿#!/usr/bin/env python3
+"""
+Supabase Command Processor for MQTT - FIXED VERSION
+Lytter til meter_commands tabellen og sender kommandoer til MQTT broker
+UnderstÃ¸tter flere Zigbee2MQTT omrÃ¥der (zigbee2mqtt, zigbee2mqtt_area2-6)
+
+Ã†NDRINGER:
+- Bruger power_meters.mqtt_topic i stedet for meter_readings.base_topic
+- Virker automatisk med alle omrÃ¥der uden kode Ã¦ndringer
+- Ingen afhÃ¦ngighed af base_topic felt
+"""
+
+import os
+import time
+import json
+import logging
+from datetime import datetime
+from supabase import create_client, Client
+import paho.mqtt.client as mqtt
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Supabase configuration
+SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://jkmqliztlhmfyejhmuil.supabase.co')
+SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY', '')
+
+# MQTT configuration
+MQTT_HOST = os.getenv('MQTT_HOST', '192.168.9.61')
+MQTT_PORT = int(os.getenv('MQTT_PORT', '1890'))
+MQTT_USER = os.getenv('MQTT_USER', 'homeassistant')
+MQTT_PASSWORD = os.getenv('MQTT_PASSWORD', '7200Grindsted!')
+
+# Poll interval (seconds)
+POLL_INTERVAL = float(os.getenv('POLL_INTERVAL', '0.2'))
+
+
+class CommandProcessor:
+    def __init__(self):
+        self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        self.mqtt_client = mqtt.Client()
+        self.mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+        self.mqtt_connected = False
+
+        # MQTT callbacks
+        self.mqtt_client.on_connect = self.on_mqtt_connect
+        self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
+
+    def on_mqtt_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            logger.info("Connected to MQTT broker")
+            self.mqtt_connected = True
+        else:
+            logger.error(f"Failed to connect to MQTT broker: {rc}")
+            self.mqtt_connected = False
+
+    def on_mqtt_disconnect(self, client, userdata, rc):
+        logger.warning("Disconnected from MQTT broker")
+        self.mqtt_connected = False
+
+    def connect_mqtt(self):
+        """Connect to MQTT broker"""
+        try:
+            logger.info(f"Connecting to MQTT broker at {MQTT_HOST}:{MQTT_PORT}")
+            self.mqtt_client.connect(MQTT_HOST, MQTT_PORT, 60)
+            self.mqtt_client.loop_start()
+
+            # Wait for connection
+            timeout = 10
+            start_time = time.time()
+            while not self.mqtt_connected and (time.time() - start_time) < timeout:
+                time.sleep(float(os.getenv('PUBLISH_DELAY_PER_CMD', '0.01')))
+
+            if not self.mqtt_connected:
+                raise Exception("MQTT connection timeout")
+
+        except Exception as e:
+            logger.error(f"Error connecting to MQTT: {e}")
+            raise
+
+    def get_meter_mqtt_topic(self, meter_id):
+        """
+        Lookup mqtt_topic for a meter from power_meters table.
+        This is the STABLE way - mqtt_topic is always correct and maintained.
+        Returns the full topic path (e.g. 'zigbee2mqtt/test maaler 1')
+        """
+        try:
+            response = self.supabase.table('power_meters')\
+                .select('mqtt_topic')\
+                .eq('meter_number', meter_id)\
+                .limit(1)\
+                .execute()
+
+            if response.data and len(response.data) > 0:
+                mqtt_topic = response.data[0].get('mqtt_topic')
+                if mqtt_topic:
+                    logger.debug(f"Found mqtt_topic '{mqtt_topic}' for meter '{meter_id}'")
+                    return mqtt_topic
+                else:
+                    logger.warning(f"mqtt_topic is NULL for meter '{meter_id}'")
+                    return None
+            else:
+                logger.warning(f"No power_meters entry found for meter '{meter_id}'")
+                return None
+
+        except Exception as e:
+            logger.error(f"Error looking up mqtt_topic for {meter_id}: {e}")
+            return None
+
+    def process_command(self, command):
+        """Process a single command"""
+        try:
+            meter_id = command['meter_id']
+            cmd = command['command']
+            value = command.get('value', 'TOGGLE')
+            command_id = command['id']
+
+            logger.info(f"Processing command {command_id}: {cmd} for {meter_id} = {value}")
+
+            # Lookup MQTT topic from power_meters table
+            mqtt_topic = self.get_meter_mqtt_topic(meter_id)
+
+            if not mqtt_topic:
+                logger.error(f"Cannot find MQTT topic for meter {meter_id} - skipping command")
+                
+                # Mark command as failed
+                self.supabase.table('meter_commands').update({
+                    'status': 'failed',
+                    'executed_at': datetime.utcnow().isoformat()
+                }).eq('id', command_id).execute()
+                
+                return False
+
+            # Build MQTT topic for command (add /set suffix)
+            topic = f"{mqtt_topic}/set"
+
+            if cmd == 'set_state':
+                payload = json.dumps({"state": value})
+            else:
+                logger.warning(f"Unknown command: {cmd}")
+                return False
+
+            # Publish to MQTT
+            if not self.mqtt_connected:
+                logger.error("MQTT not connected, reconnecting...")
+                self.connect_mqtt()
+
+            result = self.mqtt_client.publish(topic, payload, qos=1)
+
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logger.info(f"âœ… Published to {topic}: {payload}")
+
+                # Update command status in Supabase
+                self.supabase.table('meter_commands').update({
+                    'status': 'executed',
+                    'executed_at': datetime.utcnow().isoformat()
+                }).eq('id', command_id).execute()
+
+                return True
+            else:
+                logger.error(f"Failed to publish MQTT message: {result.rc}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error processing command: {e}")
+
+            # Mark command as failed
+            try:
+                self.supabase.table('meter_commands').update({
+                    'status': 'failed',
+                    'executed_at': datetime.utcnow().isoformat()
+                }).eq('id', command['id']).execute()
+            except:
+                pass
+
+            return False
+
+    def poll_commands(self):
+        """Poll for pending commands"""
+        try:
+            response = self.supabase.table('meter_commands')\
+                .select('*')\
+                .eq('status', 'pending')\
+                .order('created_at', desc=False)\
+                .limit(10)\
+                .execute()
+
+            commands = response.data
+
+            if commands:
+                logger.info(f"Found {len(commands)} pending commands")
+
+                for command in commands:
+                    self.process_command(command)
+                    time.sleep(float(os.getenv('PUBLISH_DELAY_PER_CMD', '0.01')))
+
+        except Exception as e:
+            logger.error(f"Error polling commands: {e}")
+
+    def run(self):
+        """Main run loop"""
+        logger.info("=" * 60)
+        logger.info("Starting Command Processor - FIXED VERSION")
+        logger.info("=" * 60)
+        logger.info(f"Supabase URL: {SUPABASE_URL}")
+        logger.info(f"MQTT Broker: {MQTT_HOST}:{MQTT_PORT}")
+        logger.info("Using power_meters.mqtt_topic for reliable routing")
+        logger.info("Supports all Zigbee2MQTT areas automatically (1-6)")
+        logger.info("=" * 60)
+
+        # Connect to MQTT
+        self.connect_mqtt()
+
+        logger.info(f"Polling every {POLL_INTERVAL} seconds")
+
+        try:
+            while True:
+                self.poll_commands()
+                time.sleep(POLL_INTERVAL)
+
+        except KeyboardInterrupt:
+            logger.info("Shutting down...")
+            self.mqtt_client.loop_stop()
+            self.mqtt_client.disconnect()
+
+
+if __name__ == '__main__':
+    if not SUPABASE_KEY:
+        logger.error("SUPABASE_ANON_KEY environment variable not set!")
+        exit(1)
+
+    processor = CommandProcessor()
+    processor.run()
+

@@ -1,0 +1,18 @@
+[2025-11-27 08:33:52] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-27 08:33:52] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-27 08:33:52] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-27 08:33:52] warning: 	zh:ezsp: 'ezsp' driver is deprecated and will only remain to provide support for older firmware (pre 7.4.x). Migration to 'ember' is recommended. If using Zigbee2MQTT see https://github.com/Koenkk/zigbee2mqtt/discussions/21462
+[2025-11-27 08:33:56] error: 	z2m: Error while starting zigbee-herdsman
+[2025-11-27 08:33:56] error: 	z2m: Failed to start zigbee-herdsman
+[2025-11-27 08:33:56] error: 	z2m: Check https://www.zigbee2mqtt.io/guide/installation/20_zigbee2mqtt-fails-to-start_crashes-runtime.html for possible solutions
+[2025-11-27 08:33:56] error: 	z2m: Exiting...
+[2025-11-27 08:33:56] error: 	z2m: Error: 'ezsp' driver is not compatible with firmware 8.x.x or above (EZSP v14+). Use 'ember' driver instead.
+    at Ezsp.version (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/ezsp/driver/ezsp.ts:462:19)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at Driver.startup (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/ezsp/driver/driver.ts:195:9)
+    at EZSPAdapter.start (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/ezsp/adapter/ezspAdapter.ts:151:16)
+    at Controller.start (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/controller/controller.ts:133:29)
+    at Zigbee.start (/app/lib/zigbee.ts:67:27)
+    at Controller.start (/app/lib/controller.ts:101:13)
+    at start (/app/index.js:149:5)

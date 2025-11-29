@@ -1,0 +1,29 @@
+homeassistant: true
+availability:
+  enabled: true
+
+mqtt:
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+  base_topic: zigbee2mqtt_area2
+  client_id: z2m_area2
+
+serial:
+  adapter: ezsp
+  port: tcp://192.168.1.35:6638
+
+advanced:
+  channel: 20
+  transmit_power: 20
+  pan_id: 0x1A62
+  ext_pan_id: [0xDD,0xDD,0xDD,0xDD,0xDD,0xDD,0xDD,0x02]
+  last_seen: ISO_8601
+
+frontend:
+  enabled: true
+  port: 8080
+
+permit_join: true
+devices: {}
+groups: {}

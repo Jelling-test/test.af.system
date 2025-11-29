@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  telegraf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: telegraf-postgres:1.30
+    container_name: telegraf
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ./telegraf.supabase.conf:/etc/telegraf/telegraf.conf:ro
+      - ./logs:/var/log/telegraf
+    # Force IPv4 only
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1

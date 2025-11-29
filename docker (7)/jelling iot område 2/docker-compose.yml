@@ -1,0 +1,62 @@
+version: "3.9"
+name: jelling-iot
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "192.168.9.61:1890:1883"
+    volumes:
+      - /volume1/docker/mosquitto/config:/mosquitto/config
+      - /volume1/docker/mosquitto/data:/mosquitto/data
+      - /volume1/docker/mosquitto/log:/mosquitto/log
+    networks:
+      - ha_net
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    ports:
+      - "192.168.9.61:8124:8123"
+    environment:
+      - TZ=Europe/Copenhagen
+    volumes:
+      - /volume1/docker/homeassistant/config:/config
+    networks:
+      - ha_net
+
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    ports:
+      - "192.168.9.61:8082:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+    volumes:
+      - /volume1/docker/zigbee2mqtt/data:/app/data
+    networks:
+      - ha_net
+
+  zigbee2mqtt_area2:
+    image: koenkk/zigbee2mqtt
+    container_name: zigbee2mqtt_area2
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    ports:
+      - "192.168.9.61:8083:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+    volumes:
+      - /volume1/docker/zigbee2mqtt_area2/data:/app/data
+    networks:
+      - ha_net
+
+networks:
+  ha_net:
+    driver: bridge

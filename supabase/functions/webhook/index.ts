@@ -144,17 +144,17 @@ Deno.serve(async (req) => {
         .filter('data->>booking_nummer', 'eq', bookingId)
         .eq('data->>status', 'aktiv');
 
-      // Beregn checkout statistik
+      // Beregn checkout statistik (variabler bruges også til checkout_log)
+      let totalKwhBought = 0;
+      let totalKwhConsumed = 0;
+      let totalKwhForfeited = 0;
+      
       if (customerPackages && customerPackages.length > 0) {
-        let totalKwhBought = 0;
-        let totalKwhConsumed = 0;
-        
         for (const pkg of customerPackages) {
           const kwhBought = parseFloat(pkg.data.enheder || '0');
           const accumulated = parseFloat(pkg.data.accumulated_usage || '0');
           
           // Hent nuværende meter reading hvis kunden har en måler
-          // customer.meter_id indeholder meter_number direkte (f.eks. "Kontor test", "F43")
           let currentConsumption = 0;
           if (customer?.meter_id) {
             const { data: meterReading } = await supabaseClient
@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
           totalKwhConsumed += totalConsumption;
         }
         
-        const totalKwhForfeited = Math.max(0, totalKwhBought - totalKwhConsumed);
+        totalKwhForfeited = Math.max(0, totalKwhBought - totalKwhConsumed);
         
         // UPSERT til daily_package_stats
         const today = new Date().toISOString().split('T')[0];
@@ -196,27 +196,28 @@ Deno.serve(async (req) => {
         } else {
           console.log(`Checkout statistik opdateret: ${totalKwhBought} købt, ${totalKwhConsumed} brugt, ${totalKwhForfeited} fragivet`);
         }
-
-        // Log individuel checkout til audit_log (for dashboard visning)
-        await supabaseClient
-          .from('plugin_data')
-          .insert({
-            organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-            module: 'checkout_log',
-            ref_id: bookingId.toString(),
-            key: 'checkout_' + bookingId + '_' + Date.now(),
-            data: {
-              booking_nummer: bookingId,
-              kunde_navn: (firstName + ' ' + (lastName || '')).trim() || 'Ukendt',
-              kunde_type: customerType,
-              kwh_bought: totalKwhBought,
-              kwh_consumed: totalKwhConsumed,
-              kwh_forfeited: totalKwhForfeited,
-              checkout_time: new Date().toISOString()
-            }
-          });
-        console.log('Checkout log oprettet for booking ' + bookingId);
       }
+
+      // Log individuel checkout til audit_log (ALTID - også uden pakker)
+      await supabaseClient
+        .from('plugin_data')
+        .insert({
+          organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          module: 'checkout_log',
+          ref_id: bookingId.toString(),
+          key: 'checkout_' + bookingId + '_' + Date.now(),
+          data: {
+            booking_nummer: bookingId,
+            kunde_navn: (firstName + ' ' + (lastName || '')).trim() || 'Ukendt',
+            kunde_type: customerType,
+            kwh_bought: totalKwhBought,
+            kwh_consumed: totalKwhConsumed,
+            kwh_forfeited: totalKwhForfeited,
+            had_packages: customerPackages && customerPackages.length > 0,
+            checkout_time: new Date().toISOString()
+          }
+        });
+      console.log('Checkout log oprettet for booking ' + bookingId);
 
       // Slet alle pakker for kunden
       const { error: deletePackagesError } = await supabaseClient

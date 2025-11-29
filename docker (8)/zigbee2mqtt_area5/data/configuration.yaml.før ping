@@ -1,0 +1,47 @@
+version: 4
+mqtt:
+  base_topic: zigbee2mqtt_area5
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+serial:
+  port: tcp://192.168.0.95:6638
+  adapter: ember
+  baudrate: 115200
+  rtscts: false
+advanced:
+  log_level: info
+  channel: 11
+  network_key:
+    - 220
+    - 154
+    - 132
+    - 20
+    - 68
+    - 108
+    - 201
+    - 239
+    - 148
+    - 122
+    - 61
+    - 172
+    - 160
+    - 227
+    - 224
+    - 222
+  pan_id: 18824
+  ext_pan_id:
+    - 30
+    - 74
+    - 238
+    - 117
+    - 11
+    - 117
+    - 239
+    - 16
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: true
+onboarding: false

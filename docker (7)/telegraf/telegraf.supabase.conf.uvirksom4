@@ -1,0 +1,68 @@
+# INPUT: MQTT → læs Zigbee2MQTT topics
+[[inputs.mqtt_consumer]]
+  servers = ["tcp://${MQTT_HOST}:${MQTT_PORT}"]
+  topics = ["zigbee2mqtt/+","z2m_a/+","z2m_b/+","z2m_c/+","z2m_d/+","z2m_e/+","z2m_f/+"]
+  qos = 1
+  persistent_session = true
+  client_id = "telegraf-bridge-prod"
+  username = "${MQTT_USER}"
+  password = "${MQTT_PASSWORD}"
+  data_format = "json_v2"
+  topic_tag = "topic"
+  name_override = "meter_readings"
+  
+  [[inputs.mqtt_consumer.json_v2]]
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "current"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "energy"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "power"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "voltage"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "linkquality"
+      type = "int"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "state"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "indicator_mode"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "power_outage_memory"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "update.installed_version"
+      type = "int"
+      optional = true
+      rename = "update_installed_version"
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "update.latest_version"
+      type = "int"
+      optional = true
+      rename = "update_latest_version"
+
+[[processors.regex]]
+  namepass = ["meter_readings"]
+  [[processors.regex.tags]]
+    key = "topic"
+    pattern = ".*/([^/]+)$"
+    replacement = "${1}"
+    result_key = "meter_id"
+
+# OUTPUT: Supabase Postgres (sslmode=require)
+[[outputs.postgresql]]
+  connection = "host=${PG_HOST} port=${PG_PORT} user=${PG_USER} password=${PG_PASSWORD} dbname=${PG_DB} sslmode=require"

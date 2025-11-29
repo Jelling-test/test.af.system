@@ -1,0 +1,165 @@
+import express from 'express';
+import mqtt from 'mqtt';
+import cors from 'cors';
+
+const app = express();
+const PORT = 3001;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// MQTT Configuration
+const MQTT_BROKER = 'mqtt://192.168.9.61:1890';
+const MQTT_USERNAME = 'homeassistant';
+const MQTT_PASSWORD = '7200Grindsted!';
+
+// List of all Z2M base topics
+const Z2M_TOPICS = ['zigbee2mqtt', 'zigbee2mqtt_area2'];
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'mqtt-config-service' });
+});
+
+// Configure all Tongou meters endpoint
+app.post('/configure-meters', async (req, res) => {
+  console.log('📡 Received configuration request');
+
+  try {
+    // Connect to MQTT broker
+    const client = mqtt.connect(MQTT_BROKER, {
+      username: MQTT_USERNAME,
+      password: MQTT_PASSWORD,
+      clientId: `config-service-${Date.now()}`,
+    });
+
+    let configured = 0;
+    let failed = 0;
+    let allDevices = [];
+    let responsesReceived = 0;
+
+    // Wait for connection
+    await new Promise((resolve, reject) => {
+      client.on('connect', resolve);
+      client.on('error', reject);
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+
+    console.log('✅ Connected to MQTT broker');
+
+    // Get all devices from all Z2M instances
+    await new Promise((resolve) => {
+      // Subscribe to all bridge responses
+      Z2M_TOPICS.forEach(topic => {
+        client.subscribe(`${topic}/bridge/devices`);
+      });
+
+      // Handle responses
+      client.on('message', (topic, message) => {
+        if (topic.endsWith('/bridge/devices')) {
+          const baseTopic = topic.split('/')[0];
+          const devices = JSON.parse(message.toString());
+          
+          console.log(`📡 Received ${devices.length} devices from ${baseTopic}`);
+          
+          // Filter Tongou devices and add base topic
+          const tongouDevices = devices
+            .filter(device => 
+              device.definition?.model === 'TO-Q-SY1-JZT' &&
+              device.friendly_name !== 'Coordinator'
+            )
+            .map(device => ({
+              ...device,
+              baseTopic: baseTopic
+            }));
+          
+          allDevices.push(...tongouDevices);
+          responsesReceived++;
+          
+          // When all responses received, start configuration
+          if (responsesReceived >= Z2M_TOPICS.length) {
+            resolve();
+          }
+        }
+      });
+
+      // Request device list from all Z2M instances
+      Z2M_TOPICS.forEach(topic => {
+        client.publish(`${topic}/bridge/request/devices`, '');
+      });
+
+      // Timeout after 5 seconds
+      setTimeout(resolve, 5000);
+    });
+
+    console.log(`🎯 Found ${allDevices.length} Tongou meters to configure`);
+
+    // Configure each meter
+    for (const device of allDevices) {
+      try {
+        const meterName = device.friendly_name;
+        const baseTopic = device.baseTopic;
+        const configTopic = `${baseTopic}/${meterName}/set`;
+
+        console.log(`Configuring ${meterName} on ${baseTopic}...`);
+
+        // Configuration 1: Power outage memory (restore state after power loss)
+        const powerOutageConfig = {
+          power_outage_memory: 'restore',
+        };
+
+        await new Promise((resolve) => {
+          client.publish(configTopic, JSON.stringify(powerOutageConfig), { qos: 1 }, resolve);
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Configuration 2: Indicator mode (LED behavior)
+        const indicatorConfig = {
+          indicator_mode: 'on_off',
+        };
+
+        await new Promise((resolve) => {
+          client.publish(configTopic, JSON.stringify(indicatorConfig), { qos: 1 }, resolve);
+        });
+
+        configured++;
+        console.log(`✅ Configured: ${meterName}`);
+
+        // Wait between meters
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+      } catch (error) {
+        console.error(`❌ Failed to configure ${device.friendly_name}:`, error);
+        failed++;
+      }
+    }
+
+    // Disconnect
+    client.end();
+
+    console.log(`✅ Configuration complete: ${configured} success, ${failed} failed`);
+
+    // Send response
+    res.json({
+      success: true,
+      configured,
+      failed,
+      total: allDevices.length,
+    });
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 MQTT Config Service running on port ${PORT}`);
+  console.log(`📡 MQTT Broker: ${MQTT_BROKER}`);
+  console.log(`🎯 Z2M Topics: ${Z2M_TOPICS.join(', ')}`);
+});

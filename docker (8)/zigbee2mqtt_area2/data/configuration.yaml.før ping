@@ -1,0 +1,102 @@
+homeassistant:
+  enabled: true
+availability:
+  enabled: true
+mqtt:
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+  base_topic: zigbee2mqtt_area2
+  client_id: z2m_area2
+serial:
+  adapter: ember
+  port: tcp://192.168.1.35:6638
+advanced:
+  channel: 20
+  transmit_power: 20
+  pan_id: 6754
+  ext_pan_id:
+    - 221
+    - 221
+    - 221
+    - 221
+    - 221
+    - 221
+    - 221
+    - 2
+  last_seen: ISO_8601
+  log_level: debug
+frontend:
+  enabled: true
+  port: 8080
+devices:
+  '0xbc8d7efffe1572a3':
+    friendly_name: hytte 35
+  '0xbc8d7efffe21a327':
+    friendly_name: Hytte 34
+  '0x403059fffeda40d5':
+    friendly_name: Hytte 33
+  '0xbc8d7efffe12e5db':
+    friendly_name: Hytte 32
+  '0x781c9dfffee43f05':
+    friendly_name: F61
+  '0xbc8d7efffe32996d':
+    friendly_name: F60
+  '0xbc8d7efffe2fba61':
+    friendly_name: F59
+  '0xbc8d7efffe2fa585':
+    friendly_name: F28
+  '0x781c9dfffee44d99':
+    friendly_name: F30
+  '0xbc8d7efffe14167a':
+    friendly_name: F32
+  '0xbc8d7efffe2fab94':
+    friendly_name: Hytte 31
+  '0xbc8d7efffe13110e':
+    friendly_name: Hytte 30
+  '0x781c9dfffee44398':
+    friendly_name: Hytte 29
+  '0xbc8d7efffe131787':
+    friendly_name: Hytte 28
+  '0xbc8d7efffe12397a':
+    friendly_name: Hytte 27
+  '0xbc8d7efffe14dd25':
+    friendly_name: Hytte 26
+  '0xbc8d7efffe14de69':
+    friendly_name: Hytte 36
+  '0xbc8d7efffe216d9f':
+    friendly_name: Hytte 37
+  '0xbc8d7efffe12e2a8':
+    friendly_name: Hytte 38
+  '0x781c9dfffee447c1':
+    friendly_name: Hytte 39
+  '0xbc8d7efffe14bdd4':
+    friendly_name: Hytte 40
+  '0xbc8d7efffe15359e':
+    friendly_name: Hytte 41
+  '0xbc8d7efffe156ace':
+    friendly_name: Hytte 42
+  '0xbc8d7efffe2188c4':
+    friendly_name: F29
+  '0xbc8d7efffe12e5a4':
+    friendly_name: F31
+  '0xbc8d7efffe2144c0':
+    friendly_name: '500'
+  '0xbc8d7efffe14c18f':
+    friendly_name: '501'
+  '0xbc8d7efffe14ac01':
+    friendly_name: 501,2
+  '0xbc8d7efffe148e64':
+    friendly_name: ukendt lokation 2
+  '0x781c9dfffee43f19':
+    friendly_name: ukendt lokation 1
+  '0x781c9dfffee44952':
+    friendly_name: ukendt lokation 3
+  '0xbc8d7efffe15119c':
+    friendly_name: '504'
+  '0xbc8d7efffe133110':
+    friendly_name: '507'
+  '0x781c9dfffee44bb3':
+    friendly_name: 507,2
+groups: {}
+version: 4

@@ -1,0 +1,63 @@
+version: 4
+mqtt:
+  base_topic: zigbee2mqtt_area3
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+serial:
+  port: tcp://192.168.1.9:6638
+  adapter: ember
+  baudrate: 115200
+  rtscts: false
+advanced:
+  log_level: info
+  channel: 11
+  network_key:
+    - 136
+    - 242
+    - 189
+    - 220
+    - 252
+    - 64
+    - 159
+    - 249
+    - 97
+    - 124
+    - 50
+    - 237
+    - 207
+    - 64
+    - 159
+    - 52
+  pan_id: 62969
+  ext_pan_id:
+    - 30
+    - 28
+    - 248
+    - 173
+    - 90
+    - 28
+    - 203
+    - 84
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: true
+onboarding: false
+device_options:
+  legacy: false
+devices:
+  '0x180df9fffe9a69de':
+    friendly_name: repeater plads 225.230
+  '0xbc8d7efffe2fba75':
+    friendly_name: '230'
+  '0xbc8d7efffe14a600':
+    friendly_name: '229'
+  '0xbc8d7efffe13f4a5':
+    friendly_name: '228'
+availability:
+  enabled: true

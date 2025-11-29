@@ -1,0 +1,64 @@
+{
+    "0xdc8e95fffe93c5e2": {
+        "power": 0,
+        "current": 0,
+        "voltage": 233,
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off",
+        "energy": 0.01,
+        "linkquality": 132,
+        "power_on_behavior": "on",
+        "last_seen": "2025-11-29T06:54:13.255Z"
+    },
+    "0xdc8e95fffe93c512": {
+        "current": 4.7,
+        "power": 1079,
+        "energy": 710.57,
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off",
+        "voltage": 229,
+        "linkquality": 96,
+        "power_on_behavior": "on",
+        "last_seen": "2025-11-29T06:54:48.891Z"
+    },
+    "0xdc8e95fffe93c2f7": {
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "power": 0,
+        "current": 0,
+        "voltage": 234,
+        "indicator_mode": "on_off",
+        "linkquality": 104,
+        "energy": 394.8,
+        "power_on_behavior": "on",
+        "last_seen": "2025-11-29T06:54:14.084Z"
+    },
+    "0xbc8d7efffe21ab04": {
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off",
+        "linkquality": 124,
+        "power": 0,
+        "current": 0,
+        "voltage": 238,
+        "energy": 0.18,
+        "power_on_behavior": "on",
+        "last_seen": "2025-11-29T06:54:13.341Z"
+    },
+    "0xdc8e95fffe93cb6f": {
+        "state": "ON",
+        "voltage": 4,
+        "power": 7,
+        "current": 0,
+        "energy": 4.9,
+        "last_seen": "2025-11-29T06:43:30.880Z",
+        "linkquality": 68
+    },
+    "0xbc8d7efffe2fba75": {
+        "voltage": 236,
+        "current": 383,
+        "power": 58
+    }
+}

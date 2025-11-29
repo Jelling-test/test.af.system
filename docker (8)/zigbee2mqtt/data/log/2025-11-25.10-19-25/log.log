@@ -1,0 +1,18 @@
+[2025-11-25 11:19:25] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-25 11:19:26] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-25 11:19:26] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-25 11:19:26] warning: 	zh:ezsp: 'ezsp' driver is deprecated and will only remain to provide support for older firmware (pre 7.4.x). Migration to 'ember' is recommended. If using Zigbee2MQTT see https://github.com/Koenkk/zigbee2mqtt/discussions/21462
+[2025-11-25 11:19:31] info: 	z2m: zigbee-herdsman started (resumed)
+[2025-11-25 11:19:31] info: 	z2m: Coordinator firmware version: '{"meta":{"maintrel":"1 ","majorrel":"7","minorrel":"3","product":12,"revision":"7.3.1.0 build 176"},"type":"EZSP v12"}'
+[2025-11-25 11:19:31] info: 	z2m: 0xdc8e95fffe93c5e2 (0xdc8e95fffe93c5e2): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-25 11:19:31] info: 	z2m: 0xdc8e95fffe93cb6f (0xdc8e95fffe93cb6f): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-25 11:19:31] info: 	z2m: 0xdc8e95fffe93c2f7 (0xdc8e95fffe93c2f7): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-25 11:19:31] info: 	z2m: 0xdc8e95fffe93c512 (0xdc8e95fffe93c512): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-25 11:19:31] info: 	z2m: 0xbc8d7efffe21ab04 (0xbc8d7efffe21ab04): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-25 11:19:31] info: 	z2m: Currently 5 devices are joined.
+[2025-11-25 11:19:31] info: 	z2m: Connecting to MQTT server at mqtt://mosquitto:1883
+[2025-11-25 11:19:31] error: 	z2m: MQTT failed to connect, exiting... (Connection refused: Not authorized)
+[2025-11-25 11:19:31] info: 	z2m: Stopping zigbee-herdsman...
+[2025-11-25 11:19:31] info: 	zh:controller: Wrote coordinator backup to '/app/data/coordinator_backup.json'
+[2025-11-25 11:19:31] info: 	z2m: Stopped zigbee-herdsman

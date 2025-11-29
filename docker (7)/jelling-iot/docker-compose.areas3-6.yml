@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  zigbee2mqtt_area3:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt_area3
+    restart: unless-stopped
+    volumes:
+      - /volume1/docker/zigbee2mqtt_area3/data:/app/data
+    ports:
+      - "8084:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+
+  zigbee2mqtt_area4:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt_area4
+    restart: unless-stopped
+    volumes:
+      - /volume1/docker/zigbee2mqtt_area4/data:/app/data
+    ports:
+      - "8085:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+
+  zigbee2mqtt_area5:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt_area5
+    restart: unless-stopped
+    volumes:
+      - /volume1/docker/zigbee2mqtt_area5/data:/app/data
+    ports:
+      - "8086:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+
+  zigbee2mqtt_area6:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt_area6
+    restart: unless-stopped
+    volumes:
+      - /volume1/docker/zigbee2mqtt_area6/data:/app/data
+    ports:
+      - "8087:8080"
+    environment:
+      - TZ=Europe/Copenhagen
+
+# Bemærk:
+# - Hver container læser sin egen /app/data/configuration.yaml (som du allerede har lagt).
+# - De deler default Compose-netværket med dine øvrige services (fx mosquitto), 
+#   så mqtt.server: mqtt://mosquitto:1883 virker.
+# - Hvis din mosquitto ikke ligger i samme Compose-projekt, kan du i Z2M-config ændre til
+#   mqtt://192.168.9.61:1890 i stedet for hostnavn.

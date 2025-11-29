@@ -1,0 +1,28 @@
+[2025-11-26 13:28:20] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-26 13:28:20] info: 	z2m: Starting Zigbee2MQTT version 1.39.0 (commit #0326926)
+[2025-11-26 13:28:20] info: 	z2m: Starting zigbee-herdsman (0.50.1)
+[2025-11-26 13:28:20] info: 	zh:ember: Using default stack config.
+[2025-11-26 13:28:20] info: 	zh:ember: ======== Ember Adapter Starting ========
+[2025-11-26 13:28:20] info: 	zh:ember:ezsp: ======== EZSP starting ========
+[2025-11-26 13:28:20] info: 	zh:ember:uart:ash: ======== ASH NCP reset ========
+[2025-11-26 13:28:20] info: 	zh:ember:uart:ash: Socket ready
+[2025-11-26 13:28:20] info: 	zh:ember:uart:ash: ======== ASH starting ========
+[2025-11-26 13:28:23] info: 	zh:ember:uart:ash: ======== ASH connected ========
+[2025-11-26 13:28:23] info: 	zh:ember:uart:ash: ======== ASH NCP reset ========
+[2025-11-26 13:28:23] info: 	zh:ember:uart:ash: ======== ASH starting ========
+[2025-11-26 13:28:24] info: 	zh:ember:uart:ash: ======== ASH connected ========
+[2025-11-26 13:28:24] info: 	zh:ember:uart:ash: ======== ASH started ========
+[2025-11-26 13:28:24] info: 	zh:ember:ezsp: ======== EZSP started ========
+[2025-11-26 13:28:24] error: 	z2m: Error while starting zigbee-herdsman
+[2025-11-26 13:28:24] error: 	z2m: Failed to start zigbee
+[2025-11-26 13:28:24] error: 	z2m: Check https://www.zigbee2mqtt.io/guide/installation/20_zigbee2mqtt-fails-to-start.html for possible solutions
+[2025-11-26 13:28:24] error: 	z2m: Exiting...
+[2025-11-26 13:28:24] error: 	z2m: Error: NCP EZSP protocol version of 14 does not match Host version 13
+    at EmberAdapter.emberVersion (/app/node_modules/zigbee-herdsman/src/adapter/ember/adapter/emberAdapter.ts:1714:19)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at EmberAdapter.initEzsp (/app/node_modules/zigbee-herdsman/src/adapter/ember/adapter/emberAdapter.ts:893:9)
+    at EmberAdapter.start (/app/node_modules/zigbee-herdsman/src/adapter/ember/adapter/emberAdapter.ts:2722:24)
+    at Controller.start (/app/node_modules/zigbee-herdsman/src/controller/controller.ts:129:29)
+    at Zigbee.start (/app/lib/zigbee.ts:63:27)
+    at Controller.start (/app/lib/controller.ts:139:27)
+    at start (/app/index.js:154:5)

@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies with compatible versions
+RUN pip install --no-cache-dir \
+    supabase==2.9.0 \
+    paho-mqtt==1.6.1 \
+    httpx==0.27.2
+
+# Copy script
+COPY command-processor.py .
+
+# Run script
+CMD ["python", "-u", "command-processor.py"]

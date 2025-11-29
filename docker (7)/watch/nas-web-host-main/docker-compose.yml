@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  monitor-backend:
+    build:
+      context: ./monitor-backend
+      dockerfile: Dockerfile
+    container_name: power-monitor-backend
+    env_file:
+      - ./monitor-backend/.env
+    volumes:
+      - ./monitor-backend/config.json:/app/config.json:ro
+    ports:
+      - "3010:3001"
+      - "8090:8090"
+    networks:
+      - jelling-iot
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  monitor-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: power-monitor-frontend
+    ports:
+      - "3002:80"
+    networks:
+      - jelling-iot
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  jelling-iot:
+    external: true
+    name: jelling-iot_ha_net
+
+# Note: This assumes mosquitto MQTT broker is already running in the jelling-iot network
+# If not, add it here or connect to your existing MQTT broker

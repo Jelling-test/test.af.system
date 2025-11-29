@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "auth",
+  "data": {
+    "users": [
+      {
+        "id": "cc9da41ad9684792b61885efed815c32",
+        "group_ids": [
+          "system-read-only"
+        ],
+        "is_owner": false,
+        "is_active": true,
+        "name": "Home Assistant Content",
+        "system_generated": true,
+        "local_only": false
+      },
+      {
+        "id": "11cf0ffcf7434220ae889fdfc35bdc35",
+        "group_ids": [
+          "system-admin"
+        ],
+        "is_owner": true,
+        "is_active": true,
+        "name": "Jelling Camping",
+        "system_generated": false,
+        "local_only": false
+      }
+    ],
+    "groups": [
+      {
+        "id": "system-admin",
+        "name": "Administrators"
+      },
+      {
+        "id": "system-users",
+        "name": "Users"
+      },
+      {
+        "id": "system-read-only",
+        "name": "Read Only"
+      }
+    ],
+    "credentials": [
+      {
+        "id": "d31b06a1086b442eb12cd081c40f3819",
+        "user_id": "11cf0ffcf7434220ae889fdfc35bdc35",
+        "auth_provider_type": "homeassistant",
+        "auth_provider_id": null,
+        "data": {
+          "username": "jelling"
+        }
+      }
+    ],
+    "refresh_tokens": [
+      {
+        "id": "84147b309b7849b1b3f75546e3fec592",
+        "user_id": "cc9da41ad9684792b61885efed815c32",
+        "client_id": null,
+        "client_name": null,
+        "client_icon": null,
+        "token_type": "system",
+        "created_at": "2025-11-02T15:30:36.523506+00:00",
+        "access_token_expiration": 1800.0,
+        "token": "ae28e2c6967ec7e59a016e82d76f468f185e4cde272696b123a3461cb4fda5d743290d8be5b460d296ad69f4d475aac719990096773e28bab0dba3d8c390b18a",
+        "jwt_key": "1fce4700db350dad9926a127a14bbaaa5976f8629c40429f80f350106e977de7171cdb4a79f52f1af02173e310354a2ec9881af65cefb7d2bfa107848c6e2835",
+        "last_used_at": null,
+        "last_used_ip": null,
+        "expire_at": null,
+        "credential_id": null,
+        "version": "2025.10.4"
+      },
+      {
+        "id": "6781b6b77401413ca78537e870bd1a19",
+        "user_id": "11cf0ffcf7434220ae889fdfc35bdc35",
+        "client_id": "http://192.168.9.61:8124/",
+        "client_name": null,
+        "client_icon": null,
+        "token_type": "normal",
+        "created_at": "2025-11-02T18:21:52.795846+00:00",
+        "access_token_expiration": 1800.0,
+        "token": "8ecad425bc817d1851ca94645c00d680169064dc17aa036aad457736e9758a6057a2aad374d4bef050f7a62262844e90632e833264c702b3b2cdd8505836cac4",
+        "jwt_key": "3188545eef46b1a19b0fe9528bd9f7a9516b993dc829f79189d1550138b723f576fa23940bdad2746d3ef7b679cb9422f8e674bf5d397685955c7f542eb96b86",
+        "last_used_at": "2025-11-26T08:26:19.187405+00:00",
+        "last_used_ip": "172.19.0.1",
+        "expire_at": 1771921579.187405,
+        "credential_id": "d31b06a1086b442eb12cd081c40f3819",
+        "version": "2025.10.4"
+      },
+      {
+        "id": "eaed0d5ed8ba4be7826a2c8a9e63ef45",
+        "user_id": "11cf0ffcf7434220ae889fdfc35bdc35",
+        "client_id": null,
+        "client_name": "supabase",
+        "client_icon": null,
+        "token_type": "long_lived_access_token",
+        "created_at": "2025-11-03T12:09:19.172957+00:00",
+        "access_token_expiration": 315360000.0,
+        "token": "3f90cc92e2a4b814a9016ea7fb55e26c10afe658fb19ccd72e2920f375dfbce72d9af33aadeb3d1d7e671074d85c781ec1d9764081b30ea80a6320fb86359149",
+        "jwt_key": "ce006ba2b99755d005b3a875caeaea15a8172507ded3727d7804ad60b66d09ecbf74f06d1dd618d5040e932b8de801d51b8d780091bca34442e518d97fadd132",
+        "last_used_at": "2025-11-03T12:09:19.173207+00:00",
+        "last_used_ip": null,
+        "expire_at": null,
+        "credential_id": null,
+        "version": "2025.10.4"
+      }
+    ]
+  }
+}

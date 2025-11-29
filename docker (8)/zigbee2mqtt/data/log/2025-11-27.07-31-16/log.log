@@ -1,0 +1,41 @@
+[2025-11-27 08:31:17] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-27 08:31:20] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-27 08:31:20] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-27 08:31:21] warning: 	zh:ezsp: 'ezsp' driver is deprecated and will only remain to provide support for older firmware (pre 7.4.x). Migration to 'ember' is recommended. If using Zigbee2MQTT see https://github.com/Koenkk/zigbee2mqtt/discussions/21462
+[2025-11-27 08:31:28] info: 	z2m: zigbee-herdsman started (resumed)
+[2025-11-27 08:31:28] info: 	z2m: Coordinator firmware version: '{"meta":{"maintrel":"1 ","majorrel":"7","minorrel":"3","product":12,"revision":"7.3.1.0 build 176"},"type":"EZSP v12"}'
+[2025-11-27 08:31:28] info: 	z2m: 212,2 (0xdc8e95fffe93c5e2): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-27 08:31:28] info: 	z2m: Kontor test (0xdc8e95fffe93cb6f): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-27 08:31:28] info: 	z2m: F44 (0xdc8e95fffe93c2f7): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-27 08:31:28] info: 	z2m: F43 (0xdc8e95fffe93c512): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-27 08:31:28] info: 	z2m: F42 (0xbc8d7efffe21ab04): TO-Q-SY1-JZT - Tongou Din smart relay (with power monitoring via polling) (Router)
+[2025-11-27 08:31:28] info: 	z2m: Currently 5 devices are joined.
+[2025-11-27 08:31:28] info: 	z2m: Connecting to MQTT server at mqtt://mosquitto:1883
+[2025-11-27 08:31:29] info: 	z2m: Connected to MQTT server
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/bridge/state', payload '{"state":"online"}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/212,2/availability', payload '{"state":"offline"}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/Kontor test/availability', payload '{"state":"offline"}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F44/availability', payload '{"state":"offline"}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F43/availability', payload '{"state":"offline"}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F42/availability', payload '{"state":"offline"}'
+[2025-11-27 08:31:29] info: 	z2m: Started frontend on port 8080
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/212,2', payload '{"current":0,"energy":0.01,"indicator_mode":"on_off","last_seen":"2025-11-27T06:41:12.445Z","linkquality":160,"power":0,"power_on_behavior":"on","power_outage_memory":"restore","state":"ON","update":{"installed_version":-1,"latest_version":-1,"state":null},"voltage":231}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/Kontor test', payload '{"current":0,"energy":4.73,"indicator_mode":"on_off","last_seen":"2025-11-27T06:41:14.554Z","linkquality":84,"power":0,"power_outage_memory":"restore","state":"OFF","update":{"installed_version":-1,"latest_version":-1,"state":null},"voltage":232}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F44', payload '{"current":0.33,"energy":394.69,"indicator_mode":"on_off","last_seen":"2025-11-27T06:41:27.063Z","linkquality":96,"power":7,"power_on_behavior":"on","power_outage_memory":"restore","state":"ON","update":{"installed_version":-1,"latest_version":-1,"state":null},"voltage":233}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F43', payload '{"current":8.99,"energy":659.99,"indicator_mode":"on_off","last_seen":"2025-11-27T06:41:47.549Z","linkquality":108,"power":2012,"power_on_behavior":"on","power_outage_memory":"restore","state":"ON","update":{"installed_version":-1,"latest_version":-1,"state":null},"voltage":222}'
+[2025-11-27 08:31:29] info: 	z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/F42', payload '{"current":0,"energy":0.17,"indicator_mode":"on_off","last_seen":"2025-11-27T06:41:12.466Z","linkquality":132,"power":0,"power_on_behavior":"on","power_outage_memory":"restore","state":"ON","update":{"installed_version":-1,"latest_version":-1,"state":null},"voltage":237}'
+[2025-11-27 08:31:29] info: 	z2m: Zigbee2MQTT started!
+[2025-11-27 08:31:33] error: 	zh:ezsp:uart: --> Error: Error: {"sequence":2} after 4000ms
+[2025-11-27 08:31:33] error: 	zh:ezsp:uart: -!- break waiting (2)
+[2025-11-27 08:31:33] error: 	zh:ezsp:uart: Can't send DATA frame (1,5,0): 3100013400003a94040100000101000100000203051000000000
+[2025-11-27 08:31:34] info: 	z2m:mqtt: MQTT publish: topic 'homeassistant/binary_sensor/1221051039810110150109113116116_0x449fdafffe93c305/connection_state/config', payload '{"default_entity_id":"binary_sensor.zigbee2mqtt_bridge_connection_state","device":{"hw_version":"EZSP v12 7.3.1.0 build 176","identifiers":["zigbee2mqtt_bridge_0x449fdafffe93c305"],"manufacturer":"Zigbee2MQTT","model":"Bridge","name":"Zigbee2MQTT Bridge","sw_version":"2.6.3"},"device_class":"connectivity","entity_category":"diagnostic","name":"Connection state","object_id":"zigbee2mqtt_bridge_connection_state","origin":{"name":"Zigbee2MQTT","sw":"2.6.3","url":"https://www.zigbee2mqtt.io"},"payload_off":"offline","payload_on":"online","state_topic":"zigbee2mqtt/bridge/state","unique_id":"bridge_0x449fdafffe93c305_connection_state_zigbee2mqtt","value_template":"{{ value_json.state }}"}'
+[2025-11-27 08:31:38] error: 	zh:ezsp:uart: --> Error: Error: {"sequence":2} after 4000ms
+[2025-11-27 08:31:38] error: 	zh:ezsp:uart: -!- break rewaiting (2)
+[2025-11-27 08:31:38] error: 	zh:ezsp:uart: Can't resend DATA frame (1,5,1): 3100013400003a94040100000101000100000203051000000000
+[2025-11-27 08:31:38] warning: 	z2m: Failed to ping '212,2' (attempt 1/1, ZCL command 0xdc8e95fffe93c5e2/1 genBasic.read(["zclVersion"], {"timeout":10000,"disableResponse":false,"disableRecovery":true,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed (sendZclFrameToEndpointInternal error))
+[2025-11-27 08:31:40] warning: 	z2m: Failed to ping 'Kontor test' (attempt 1/1, ZCL command 0xdc8e95fffe93cb6f/1 genBasic.read(["zclVersion"], {"timeout":10000,"disableResponse":false,"disableRecovery":true,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed (sendZclFrameToEndpointInternal error))
+[2025-11-27 08:31:42] warning: 	z2m: Failed to ping 'F44' (attempt 1/1, ZCL command 0xdc8e95fffe93c2f7/1 genBasic.read(["zclVersion"], {"timeout":10000,"disableResponse":false,"disableRecovery":true,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed (sendZclFrameToEndpointInternal error))
+[2025-11-27 08:31:44] warning: 	z2m: Failed to ping 'F43' (attempt 1/1, ZCL command 0xdc8e95fffe93c512/1 genBasic.read(["zclVersion"], {"timeout":10000,"disableResponse":false,"disableRecovery":true,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed (sendZclFrameToEndpointInternal error))
+[2025-11-27 08:31:46] warning: 	z2m: Failed to ping 'F42' (attempt 1/1, ZCL command 0xbc8d7efffe21ab04/1 genBasic.read(["zclVersion"], {"timeout":10000,"disableResponse":false,"disableRecovery":true,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed (sendZclFrameToEndpointInternal error))
+[2025-11-27 08:31:49] error: 	zh:ezsp:uart: --> Error: Error: {"sequence":-1} after 10000ms

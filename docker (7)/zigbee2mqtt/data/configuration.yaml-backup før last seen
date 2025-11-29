@@ -1,0 +1,57 @@
+homeassistant:
+  enabled: true
+  retain: true
+
+availability:
+  enabled: true
+
+mqtt:
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+  base_topic: zigbee2mqtt
+
+serial:
+  adapter: ezsp
+  port: tcp://192.168.0.254:6638
+
+advanced:
+  transmit_power: 20
+  # VIGTIGT: Slå last_seen til så offline/online vises korrekt (samme som area2)
+  last_seen: ISO_8601
+  network_key:
+    - 1
+    - 3
+    - 5
+    - 7
+    - 9
+    - 11
+    - 13
+    - 15
+    - 0
+    - 2
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+    - 13
+
+frontend:
+  enabled: true
+  port: 8080
+
+version: 4
+
+# Behold dine nuværende devices som de er – nedenfor er kun eksempler
+devices:
+  '0xdc8e95fffe93c5e2':
+    friendly_name: maaler 212,2
+  '0xdc8e95fffe93c2f7':
+    friendly_name: F44
+  '0xdc8e95fffe93c512':
+    friendly_name: F43
+  '0xbc8d7efffe21ab04':
+    friendly_name: F42
+  '0xdc8e95fffe93cb6f':
+    friendly_name: kontor_final_v1

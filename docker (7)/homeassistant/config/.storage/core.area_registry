@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "minor_version": 8,
+  "key": "core.area_registry",
+  "data": {
+    "areas": [
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": null,
+        "id": "stue",
+        "labels": [],
+        "name": "Stue",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2025-11-02T18:21:18.607261+00:00",
+        "modified_at": "2025-11-02T18:21:18.607265+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": null,
+        "id": "kokken",
+        "labels": [],
+        "name": "Køkken",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2025-11-02T18:21:18.624161+00:00",
+        "modified_at": "2025-11-02T18:21:18.624168+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": null,
+        "id": "sovevaerelse",
+        "labels": [],
+        "name": "Soveværelse",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2025-11-02T18:21:18.624305+00:00",
+        "modified_at": "2025-11-02T18:21:18.624307+00:00"
+      }
+    ]
+  }
+}

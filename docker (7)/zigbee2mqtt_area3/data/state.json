@@ -1,0 +1,30 @@
+{
+    "0x180df9fffe9a69de": {},
+    "0xbc8d7efffe2fba75": {
+        "current": 0.23,
+        "power": 36,
+        "voltage": 236,
+        "energy": 3.09,
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off"
+    },
+    "0xbc8d7efffe14a600": {
+        "power": 0,
+        "current": 0,
+        "voltage": 234,
+        "state": "ON",
+        "energy": 0,
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off"
+    },
+    "0xbc8d7efffe13f4a5": {
+        "power": 0,
+        "current": 0,
+        "voltage": 235,
+        "energy": 0,
+        "state": "ON",
+        "power_outage_memory": "restore",
+        "indicator_mode": "on_off"
+    }
+}

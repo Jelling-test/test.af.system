@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "minor_version": 1,
+  "key": "person",
+  "data": {
+    "items": [
+      {
+        "id": "jelling_camping",
+        "name": "Jelling Camping",
+        "user_id": "11cf0ffcf7434220ae889fdfc35bdc35",
+        "device_trackers": []
+      }
+    ]
+  }
+}

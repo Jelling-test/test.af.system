@@ -1,0 +1,50 @@
+[2025-11-26 13:34:38] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-26 13:34:38] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-26 13:34:38] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-26 13:34:40] info: 	zh:ember: Using default stack config.
+[2025-11-26 13:34:40] info: 	zh:ember: ======== Ember Adapter Starting ========
+[2025-11-26 13:34:40] info: 	zh:ember:ezsp: ======== EZSP starting ========
+[2025-11-26 13:34:40] info: 	zh:ember:uart:ash: ======== ASH Adapter reset ========
+[2025-11-26 13:34:40] info: 	zh:ember:uart:ash: Socket ready
+[2025-11-26 13:34:40] info: 	zh:ember:uart:ash: ======== ASH starting ========
+[2025-11-26 13:34:42] info: 	zh:ember:uart:ash: ======== ASH connected ========
+[2025-11-26 13:34:42] info: 	zh:ember:uart:ash: ======== ASH started ========
+[2025-11-26 13:34:42] info: 	zh:ember:ezsp: ======== EZSP started ========
+[2025-11-26 13:34:42] info: 	zh:ember: Adapter EZSP protocol version (14) lower than Host. Switched.
+[2025-11-26 13:34:42] info: 	zh:ember: Adapter version info: {"ezsp":14,"revision":"8.0.2 [GA]","build":397,"major":8,"minor":0,"patch":2,"special":0,"type":170}
+[2025-11-26 13:34:42] info: 	zh:ember: [STACK STATUS] Network up.
+[2025-11-26 13:34:42] info: 	zh:ember: [INIT TC] Adapter network matches config.
+[2025-11-26 13:34:42] info: 	zh:ember: [CONCENTRATOR] Started source route discovery. 1247ms until next broadcast.
+[2025-11-26 13:34:43] info: 	z2m: zigbee-herdsman started (resumed)
+[2025-11-26 13:34:43] info: 	z2m: Coordinator firmware version: '{"meta":{"build":397,"ezsp":14,"major":8,"minor":0,"patch":2,"revision":"8.0.2 [GA]","special":0,"type":170},"type":"EmberZNet"}'
+[2025-11-26 13:34:43] info: 	z2m: repeater plads 225.230 (0x180df9fffe9a69de): WG001 - Aeotec Range extender Zi (Router)
+[2025-11-26 13:34:43] info: 	z2m: Currently 1 devices are joined.
+[2025-11-26 13:34:43] info: 	z2m: Connecting to MQTT server at mqtt://mosquitto:1883
+[2025-11-26 13:34:43] error: 	z2m: MQTT failed to connect, exiting... (Connection refused: Not authorized)
+[2025-11-26 13:34:43] info: 	z2m: Stopping zigbee-herdsman...
+[2025-11-26 13:34:45] info: 	zh:controller: Wrote coordinator backup to '/app/data/coordinator_backup.json'
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash: ASH COUNTERS since last clear:
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Total frames: RX=50, TX=95
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Cancelled   : RX=0, TX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   DATA frames : RX=48, TX=44
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   DATA bytes  : RX=690, TX=481
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Retry frames: RX=1, TX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   ACK frames  : RX=0, TX=50
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   NAK frames  : RX=0, TX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   nRdy frames : RX=0, TX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   CRC errors      : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Comm errors     : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Length < minimum: RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Length > maximum: RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Bad controls    : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Bad lengths     : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Bad ACK numbers : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Out of buffers  : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Retry dupes     : RX=1
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   Out of sequence : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash:   ACK timeouts    : RX=0
+[2025-11-26 13:34:45] info: 	zh:ember:uart:ash: ======== ASH stopped ========
+[2025-11-26 13:34:45] info: 	zh:ember:ezsp: ======== EZSP stopped ========
+[2025-11-26 13:34:45] info: 	zh:ember: ======== Ember Adapter Stopped ========
+[2025-11-26 13:34:45] info: 	z2m: Stopped zigbee-herdsman

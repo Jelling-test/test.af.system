@@ -1,0 +1,19 @@
+[2025-11-26 13:25:57] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-26 13:25:57] info: 	z2m: Starting Zigbee2MQTT version 1.39.0 (commit #0326926)
+[2025-11-26 13:25:57] info: 	z2m: Starting zigbee-herdsman (0.50.1)
+[2025-11-26 13:25:57] warning: 	zh:ezsp: Deprecated driver 'ezsp' currently in use, 'ember' will become the officially supported EmberZNet driver in next release. If using Zigbee2MQTT see https://github.com/Koenkk/zigbee2mqtt/discussions/21462
+[2025-11-26 13:26:02] error: 	z2m: Error while starting zigbee-herdsman
+[2025-11-26 13:26:02] error: 	z2m: Failed to start zigbee
+[2025-11-26 13:26:02] error: 	z2m: Check https://www.zigbee2mqtt.io/guide/installation/20_zigbee2mqtt-fails-to-start.html for possible solutions
+[2025-11-26 13:26:02] error: 	z2m: Exiting...
+[2025-11-26 13:26:03] error: 	z2m: RangeError: Attempt to access memory outside buffer bounds
+    at new NodeError (node:internal/errors:405:5)
+    at boundsError (node:internal/buffer:86:11)
+    at Buffer.readUInt16LE (node:internal/buffer:245:5)
+    at Buffer.readUIntLE (node:internal/buffer:182:17)
+    at Function.deserialize (/app/node_modules/zigbee-herdsman/src/adapter/ezsp/driver/types/basic.ts:19:67)
+    at Driver.startup (/app/node_modules/zigbee-herdsman/src/adapter/ezsp/driver/driver.ts:201:37)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at Controller.start (/app/node_modules/zigbee-herdsman/src/controller/controller.ts:129:29)
+    at Zigbee.start (/app/lib/zigbee.ts:63:27)
+    at Controller.start (/app/lib/controller.ts:139:27)

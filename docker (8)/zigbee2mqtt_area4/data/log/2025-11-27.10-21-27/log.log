@@ -1,0 +1,14 @@
+[2025-11-27 11:21:27] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-27 11:21:27] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-27 11:21:27] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-27 11:21:28] info: 	zh:ember: Using default stack config.
+[2025-11-27 11:21:28] info: 	zh:ember: ======== Ember Adapter Starting ========
+[2025-11-27 11:21:28] info: 	zh:ember:ezsp: ======== EZSP starting ========
+[2025-11-27 11:21:28] info: 	zh:ember:uart:ash: ======== ASH Adapter reset ========
+[2025-11-27 11:21:28] error: 	z2m: Not connected to MQTT server!
+[2025-11-27 11:21:28] error: 	z2m: Cannot send message: topic: 'zigbee2mqtt_area4/bridge/state', payload: '{"state":"offline"}
+[2025-11-27 11:21:28] info: 	z2m: Disconnecting from MQTT server
+[2025-11-27 11:21:28] info: 	z2m: Stopping zigbee-herdsman...
+[2025-11-27 11:21:28] info: 	z2m: Stopped zigbee-herdsman
+[2025-11-27 11:21:28] info: 	z2m: Stopped Zigbee2MQTT

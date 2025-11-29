@@ -1,0 +1,58 @@
+version: 4
+mqtt:
+  base_topic: zigbee2mqtt_area4
+  server: mqtt://mosquitto:1883
+  user: homeassistant
+  password: 7200Grindsted!
+serial:
+  port: tcp://192.168.1.66:6638
+  adapter: ember
+  baudrate: 115200
+  rtscts: false
+advanced:
+  log_level: info
+  channel: 11
+  network_key:
+    - 208
+    - 220
+    - 229
+    - 51
+    - 36
+    - 34
+    - 84
+    - 153
+    - 109
+    - 154
+    - 234
+    - 202
+    - 221
+    - 0
+    - 172
+    - 81
+  pan_id: 61052
+  ext_pan_id:
+    - 92
+    - 100
+    - 55
+    - 252
+    - 149
+    - 139
+    - 0
+    - 87
+  last_seen: ISO_8601
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: true
+onboarding: false
+# Availability konfiguration - begræns til 2 ping forsøg
+availability:
+  enabled: true
+  active:
+    timeout: 10              # Første ping efter 10 min uden besked
+    max_jitter: 30000        # Jitter for at undgå samtidige pings
+    backoff: true            # Aktivér eksponentiel backoff
+    pause_on_backoff_gt: 15  # STOP pinging efter 15 min = ca. 2 forsøg
+  passive:
+    timeout: 1500            # Batteri-enheder: 25 timer

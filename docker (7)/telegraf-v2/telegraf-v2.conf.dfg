@@ -1,0 +1,93 @@
+# Telegraf v2 configuration for ingesting Z2M MQTT into Supabase (COMPLETE)
+
+[agent]
+  omit_hostname = true
+
+# INPUT: MQTT → læs Zigbee2MQTT topics fra alle områder
+[[inputs.mqtt_consumer]]
+  servers = ["tcp://192.168.9.61:1890"]
+  topics = [
+    "zigbee2mqtt/+",
+    "zigbee2mqtt_area2/+",
+    "zigbee2mqtt_area3/+",
+    "zigbee2mqtt_area4/+",
+    "zigbee2mqtt_area5/+",
+    "zigbee2mqtt_area6/+",
+    "z2m_a/+",
+    "z2m_b/+",
+    "z2m_c/+",
+    "z2m_d/+",
+    "z2m_e/+",
+    "z2m_f/+"
+  ]
+  qos = 1
+  persistent_session = true
+  client_id = "telegraf-bridge-prod-v3"
+  username = "homeassistant"
+  password = "7200Grindsted!"
+  data_format = "json_v2"
+  topic_tag = "topic"
+  name_override = "meter_readings"
+
+  [[inputs.mqtt_consumer.json_v2]]
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "current"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "energy"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "power"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "voltage"
+      type = "float"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "linkquality"
+      type = "int"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "state"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "indicator_mode"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "power_outage_memory"
+      type = "string"
+      optional = true
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "update.installed_version"
+      type = "int"
+      optional = true
+      rename = "update_installed_version"
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "update.latest_version"
+      type = "int"
+      optional = true
+      rename = "update_latest_version"
+    [[inputs.mqtt_consumer.json_v2.field]]
+      path = "availability"
+      type = "string"
+      optional = true
+      rename = "is_available"
+
+# PROCESSOR: Udtræk meter_id fra topic (sidste path-segment)
+[[processors.regex]]
+  namepass = ["meter_readings"]
+  [[processors.regex.tags]]
+    key = "topic"
+    pattern = ".*/([^/]+)$"
+    replacement = "${1}"
+    result_key = "meter_id"
+
+# OUTPUT: Supabase Postgres (skriv alle målefelter ind i database)
+[[outputs.postgresql]]
+  connection = "host=db.scoqfneqadcmejtbanfy.supabase.co port=5432 user=postgres password=Jelling2025! dbname=postgres sslmode=require"
+  tagexclude = ["topic"]

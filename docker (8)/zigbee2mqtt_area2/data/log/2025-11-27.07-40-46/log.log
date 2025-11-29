@@ -1,0 +1,64 @@
+[2025-11-27 08:40:46] debug: 	z2m: Removing old log directory '/app/data/log/2025-11-25.09-49-35'
+[2025-11-27 08:40:46] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-27 08:40:46] debug: 	z2m: Loaded state from file /app/data/state.json
+[2025-11-27 08:40:46] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-27 08:40:46] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-27 08:40:46] debug: 	z2m: Using zigbee-herdsman with settings: '"{\"network\":{\"panID\":6754,\"extendedPanID\":[221,221,221,221,221,221,221,2],\"channelList\":[20],\"networkKey\":\"HIDDEN\"},\"databasePath\":\"/app/data/database.db\",\"databaseBackupPath\":\"/app/data/database.db.backup\",\"backupPath\":\"/app/data/coordinator_backup.json\",\"serialPort\":{\"path\":\"tcp://192.168.1.35:6638\",\"adapter\":\"ember\"},\"adapter\":{\"disableLED\":false,\"transmitPower\":20}}"'
+[2025-11-27 08:40:47] info: 	zh:ember: Using default stack config.
+[2025-11-27 08:40:47] debug: 	zh:controller: Starting with options '{"network":{"networkKeyDistribute":false,"networkKey":"HIDDEN","panID":6754,"extendedPanID":[221,221,221,221,221,221,221,2],"channelList":[20]},"serialPort":{"path":"tcp://192.168.1.35:6638","adapter":"ember"},"adapter":{"disableLED":false,"transmitPower":20},"databasePath":"/app/data/database.db","databaseBackupPath":"/app/data/database.db.backup","backupPath":"/app/data/coordinator_backup.json"}'
+[2025-11-27 08:40:47] info: 	zh:ember: ======== Ember Adapter Starting ========
+[2025-11-27 08:40:47] info: 	zh:ember:ezsp: ======== EZSP starting ========
+[2025-11-27 08:40:47] info: 	zh:ember:uart:ash: ======== ASH Adapter reset ========
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Opening TCP socket with 192.168.1.35:6638
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Socket connected
+[2025-11-27 08:40:47] info: 	zh:ember:uart:ash: Socket ready
+[2025-11-27 08:40:47] info: 	zh:ember:uart:ash: ======== ASH starting ========
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: ---> [FRAME type=RST]
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 0/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 100/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 200/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 300/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 400/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 500/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 600/5000
+[2025-11-27 08:40:47] debug: 	zh:ember:uart:ash: Waiting for RSTACK... 700/5000
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x449fdafffe93c324): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe1572a3): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe21a327): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x403059fffeda40d5): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe12e5db): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe2144c0): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14c18f): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14ac01): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x781c9dfffee43f05): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe32996d): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe2fba61): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe2fa585): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe2188c4): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x781c9dfffee44d99): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe12e5a4): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14167a): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe2fab94): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe13110e): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x781c9dfffee44398): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe131787): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe12397a): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14dd25): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14de69): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe216d9f): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe12e2a8): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x781c9dfffee447c1): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe14bdd4): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe15359e): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe156ace): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0xbc8d7efffe148e64): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	zh:controller:device: Request Queue (0x781c9dfffee43f19): default expiration timeout set to 0
+[2025-11-27 08:40:47] debug: 	z2m: Saving state to file /app/data/state.json
+[2025-11-27 08:40:47] error: 	z2m: Not connected to MQTT server!
+[2025-11-27 08:40:47] error: 	z2m: Cannot send message: topic: 'zigbee2mqtt_area2/bridge/state', payload: '{"state":"offline"}
+[2025-11-27 08:40:47] info: 	z2m: Disconnecting from MQTT server
+[2025-11-27 08:40:47] info: 	z2m: Stopping zigbee-herdsman...
+[2025-11-27 08:40:47] debug: 	zh:controller:database: Writing database to '/app/data/database.db'
+[2025-11-27 08:40:48] info: 	z2m: Stopped zigbee-herdsman
+[2025-11-27 08:40:48] info: 	z2m: Stopped Zigbee2MQTT
