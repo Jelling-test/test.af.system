@@ -34,6 +34,7 @@ type PairingStep =
   | "joined"         // Enhed fundet
   | "interviewing"   // Interview i gang
   | "ready"          // Klar til navngivning
+  | "testing"        // Tester relæ
   | "failed"         // Interview fejlet
   | "success";       // Færdig
 
@@ -61,6 +62,7 @@ const Parring = () => {
   const [newName, setNewName] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<boolean | null>(null);
 
   // Hent tilgængelige områder ved mount
   useEffect(() => {
@@ -173,13 +175,33 @@ const Parring = () => {
 
       case "rename_response":
         if (message.data.status === "ok") {
-          setStep("success");
           toast.success(`Måler omdøbt til "${newName}"`);
-          // Stop pairing mode
-          stopPairing();
+          // Relay test will start automatically - wait for it
         } else {
           toast.error("Kunne ikke omdøbe måler: " + (message.data.error || "Ukendt fejl"));
         }
+        break;
+
+      case "relay_command_sent":
+        if (message.data.state === "OFF") {
+          toast.info("Relæ slukket - se efter lyset slukker");
+        } else {
+          toast.success("Relæ tændt!");
+        }
+        break;
+
+      case "relay_test_complete":
+        setTestResult(message.data.success);
+        setStep("success");
+        if (message.data.success) {
+          toast.success("Måler testet: OK!");
+        } else {
+          toast.error("Måler test fejlede!");
+        }
+        // Stop pairing after short delay
+        setTimeout(() => {
+          stopPairing();
+        }, 500);
         break;
     }
   };
@@ -281,6 +303,7 @@ const Parring = () => {
     setDeviceInfo(null);
     setNewName("");
     setError(null);
+    setTestResult(null);
   };
 
   // Render baseret på step
@@ -443,6 +466,39 @@ const Parring = () => {
           </div>
         );
 
+      case "testing":
+        return (
+          <div className="space-y-6 text-center">
+            <div className="relative">
+              <Loader2 className="w-20 h-20 mx-auto text-blue-500 animate-spin" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Tester måler...</h2>
+              <p className="text-muted-foreground">
+                Relæ test: OFF → vent 3 sek → ON
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Se efter at lyset blinker på måleren
+              </p>
+            </div>
+            {testResult !== null && (
+              <div className={`p-4 rounded-lg ${testResult ? 'bg-green-500/10 border border-green-500/20' : 'bg-destructive/10 border border-destructive/20'}`}>
+                {testResult ? (
+                  <div className="flex items-center justify-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="font-medium">Måler testet: OK</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-destructive">
+                    <XCircle className="w-5 h-5" />
+                    <span className="font-medium">Måler test fejlet</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+
       case "failed":
         return (
           <div className="space-y-6 text-center">
@@ -539,6 +595,7 @@ const Parring = () => {
                   {step === "waiting" && "Parring aktiv"}
                   {(step === "joined" || step === "interviewing") && "Enhed fundet"}
                   {step === "ready" && "Navngiv måler"}
+                  {step === "testing" && "Tester måler"}
                   {step === "failed" && "Fejl"}
                   {step === "success" && "Færdig"}
                 </CardTitle>

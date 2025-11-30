@@ -417,7 +417,10 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
                           ? oldestActivePakke.data.pakke_start_energy
                           : customer.meter_start_energy || 0;
                         
-                        const totalUsage = currentReading.energy - totalStartEnergy;
+                        // KRITISK: Inkluder accumulated_usage fra alle pakker (forbrug fra tidligere målere)
+                        const totalAccumulated = activePakker.reduce((sum: number, p: any) => 
+                          sum + parseFloat(p.data.accumulated_usage || '0'), 0);
+                        const totalUsage = totalAccumulated + (currentReading.energy - totalStartEnergy);
                         const totalEnheder = activePakker.reduce((sum: number, p: any) => sum + parseFloat(p.data.enheder), 0);
                         const totalRemaining = totalEnheder - totalUsage;
                         const totalPercentUsed = totalEnheder > 0 ? (totalUsage / totalEnheder) * 100 : 0;

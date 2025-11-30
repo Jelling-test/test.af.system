@@ -121,11 +121,6 @@ function handleMqttMessage(topic, payload) {
             const deviceName = pairingState.currentDevice?.friendly_name || data.ieee_address;
             autoConfigureMeter(pairingState.baseTopic, deviceName);
             
-            // Send OFF command to test relay (user will see light turn off)
-            setTimeout(() => {
-              sendRelayCommand(pairingState.baseTopic, deviceName, 'OFF');
-            }, 2000);
-            
             broadcastToClients({
               event: 'interview_successful',
               data: {
@@ -163,17 +158,13 @@ function handleMqttMessage(topic, payload) {
       data: payload
     });
     
-    // If rename was successful, send ON command to complete test
+    // If rename was successful, start relay test
     if (payload.status === 'ok' && payload.data?.to) {
       const newName = payload.data.to;
-      console.log(`📝 Rename successful, sending ON command to: ${newName}`);
-      // Send ON command to turn relay back on
+      console.log(`📝 Rename successful, starting relay test for: ${newName}`);
+      // Small delay to ensure Z2M has updated the device name
       setTimeout(() => {
-        sendRelayCommand(pairingState.baseTopic, newName, 'ON');
-        broadcastToClients({
-          event: 'relay_test_complete',
-          data: { friendly_name: newName, success: true }
-        });
+        testMeterRelay(pairingState.baseTopic, newName);
       }, 1000);
     }
   }
@@ -218,27 +209,56 @@ function autoConfigureMeter(baseTopic, friendlyName) {
   });
 }
 
-// Send a single relay command (ON or OFF)
-function sendRelayCommand(baseTopic, friendlyName, state) {
-  console.log(`🔌 Sending ${state} to: ${friendlyName}`);
+// Test meter relay (OFF → wait 3s → ON)
+async function testMeterRelay(baseTopic, friendlyName) {
+  console.log(`🔌 Testing relay for: ${friendlyName}`);
   
   const topic = `${baseTopic}/${friendlyName}/set`;
   
-  mqttClient.publish(topic, JSON.stringify({ state: state }), { qos: 1 }, (err) => {
-    if (err) {
-      console.error(`❌ Failed to send ${state} to ${friendlyName}:`, err.message);
-      broadcastToClients({
-        event: 'relay_command_failed',
-        data: { friendly_name: friendlyName, state: state, error: err.message }
+  try {
+    // Broadcast test started
+    broadcastToClients({
+      event: 'relay_test_started',
+      data: { friendly_name: friendlyName }
+    });
+    
+    // 1. Send OFF command
+    console.log(`  → Sending OFF to ${friendlyName}`);
+    await new Promise((resolve, reject) => {
+      mqttClient.publish(topic, JSON.stringify({ state: 'OFF' }), { qos: 1 }, (err) => {
+        if (err) reject(err);
+        else resolve();
       });
-    } else {
-      console.log(`✅ Sent ${state} to ${friendlyName}`);
-      broadcastToClients({
-        event: 'relay_command_sent',
-        data: { friendly_name: friendlyName, state: state }
+    });
+    
+    // 2. Wait 3 seconds
+    console.log(`  → Waiting 3 seconds...`);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // 3. Send ON command
+    console.log(`  → Sending ON to ${friendlyName}`);
+    await new Promise((resolve, reject) => {
+      mqttClient.publish(topic, JSON.stringify({ state: 'ON' }), { qos: 1 }, (err) => {
+        if (err) reject(err);
+        else resolve();
       });
-    }
-  });
+    });
+    
+    console.log(`✅ Relay test complete for ${friendlyName}`);
+    
+    // Broadcast success
+    broadcastToClients({
+      event: 'relay_test_complete',
+      data: { friendly_name: friendlyName, success: true }
+    });
+    
+  } catch (err) {
+    console.error(`❌ Relay test failed for ${friendlyName}:`, err.message);
+    broadcastToClients({
+      event: 'relay_test_complete',
+      data: { friendly_name: friendlyName, success: false, error: err.message }
+    });
+  }
 }
 
 // Initialize MQTT on startup
@@ -258,23 +278,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Area names mapping
-const AREA_NAMES = {
-  'zigbee2mqtt': '100 området',
-  'zigbee2mqtt_area2': 'Hytter og 500 området',
-  'zigbee2mqtt_area3': '200 området',
-  'zigbee2mqtt_area4': '400 området',
-  'zigbee2mqtt_area5': '300 området',
-  'zigbee2mqtt_area6': 'Område 6'
-};
-
 // Get available areas
 app.get('/pairing/areas', (req, res) => {
   res.json({
     success: true,
-    areas: Z2M_TOPICS.map((topic) => ({
+    areas: Z2M_TOPICS.map((topic, index) => ({
       id: topic,
-      name: AREA_NAMES[topic] || topic,
+      name: index === 0 ? 'Område 1 (Hovedcontroller)' : `Område ${index + 1}`,
       baseTopic: topic
     }))
   });

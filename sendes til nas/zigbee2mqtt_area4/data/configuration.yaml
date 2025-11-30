@@ -43,6 +43,7 @@ advanced:
 frontend:
   enabled: true
   port: 8080
+  title: "400 området"
 homeassistant:
   enabled: true
 onboarding: false

@@ -37,6 +37,7 @@ advanced:
 frontend:
   enabled: true
   port: 8080
+  title: "Hytter og 500 området"
 devices:
   '0xbc8d7efffe1572a3':
     friendly_name: hytte 35

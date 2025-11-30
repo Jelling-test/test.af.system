@@ -568,12 +568,19 @@ Deno.serve(async (req) => {
       }
 
       if (isSeasonalCustomer) {
-        // Tjek om kunden findes som regular customer
+        // KRITISK: Hent eksisterende sæsonkunde data FØRST for at bevare måler-info
+        const { data: existingSeasonalSelf } = await supabaseClient
+          .from('seasonal_customers')
+          .select('meter_id, meter_start_energy, meter_start_time')
+          .eq('booking_id', bookingId)
+          .maybeSingle();
+
+        // Tjek om kunden findes som regular customer (for flytning)
         const { data: existingRegular } = await supabaseClient
           .from('regular_customers')
           .select('*')
           .eq('booking_id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (existingRegular) {
           console.log(`Flytter kunde ${bookingId} fra regular til seasonal`);
@@ -584,8 +591,12 @@ Deno.serve(async (req) => {
           movedCustomer = true;
         }
 
-        // Gem som sæson kunde MED email og phone
-        // HYTTE: Brug cabinMeterId hvis det er hytte-booking
+        // Bestem meter_id: 1) Hytte, 2) Eksisterende i seasonal, 3) Fra regular (flytning), 4) null
+        const resolvedMeterId = isCabinBooking 
+          ? cabinMeterId 
+          : (existingSeasonalSelf?.meter_id || existingRegular?.meter_id || null);
+
+        // Gem som sæson kunde - BEVAR eksisterende måler-data!
         const seasonalData = {
           booking_id: bookingId,
           first_name: firstName,
@@ -599,7 +610,10 @@ Deno.serve(async (req) => {
           checked_out: checkedOut,
           spot_number: spotNumber,
           license_plates: licensePlates,
-          meter_id: isCabinBooking ? cabinMeterId : (existingRegular?.meter_id || null),
+          meter_id: resolvedMeterId,
+          // KRITISK: Bevar eksisterende måler start-data!
+          meter_start_energy: existingSeasonalSelf?.meter_start_energy || existingRegular?.meter_start_energy || null,
+          meter_start_time: existingSeasonalSelf?.meter_start_time || existingRegular?.meter_start_time || null,
           updated_at: new Date().toISOString()
         };
 
@@ -614,12 +628,19 @@ Deno.serve(async (req) => {
         }
 
       } else {
-        // Tjek om kunden findes som seasonal customer
+        // KRITISK: Hent eksisterende regular kunde data FØRST for at bevare måler-info
+        const { data: existingRegularSelf } = await supabaseClient
+          .from('regular_customers')
+          .select('meter_id, meter_start_energy, meter_start_time')
+          .eq('booking_id', bookingId)
+          .maybeSingle();
+
+        // Tjek om kunden findes som seasonal customer (for flytning)
         const { data: existingSeasonal } = await supabaseClient
           .from('seasonal_customers')
           .select('*')
           .eq('booking_id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (existingSeasonal) {
           console.log(`Flytter kunde ${bookingId} fra seasonal til regular`);
@@ -630,8 +651,12 @@ Deno.serve(async (req) => {
           movedCustomer = true;
         }
 
-        // Gem som kørende kunde MED email og phone
-        // HYTTE: Brug cabinMeterId hvis det er hytte-booking
+        // Bestem meter_id: 1) Hytte, 2) Eksisterende i regular, 3) Fra seasonal (flytning), 4) null
+        const resolvedMeterId = isCabinBooking 
+          ? cabinMeterId 
+          : (existingRegularSelf?.meter_id || existingSeasonal?.meter_id || null);
+
+        // Gem som kørende kunde - BEVAR eksisterende måler-data!
         const regularData = {
           booking_id: bookingId,
           first_name: firstName,
@@ -646,7 +671,10 @@ Deno.serve(async (req) => {
           number_of_persons: numberOfPersons,
           spot_number: spotNumber,
           license_plates: licensePlates,
-          meter_id: isCabinBooking ? cabinMeterId : (existingSeasonal?.meter_id || null),
+          meter_id: resolvedMeterId,
+          // KRITISK: Bevar eksisterende måler start-data!
+          meter_start_energy: existingRegularSelf?.meter_start_energy || existingSeasonal?.meter_start_energy || null,
+          meter_start_time: existingRegularSelf?.meter_start_time || existingSeasonal?.meter_start_time || null,
           updated_at: new Date().toISOString()
         };
 

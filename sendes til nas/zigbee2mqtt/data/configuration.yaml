@@ -42,6 +42,7 @@ advanced:
 frontend:
   enabled: true
   port: 8080
+  title: "100 området"
 version: 4
 devices:
   '0xdc8e95fffe93c5e2':

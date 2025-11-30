@@ -699,6 +699,13 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
       const oldMeterNumber = selectedCustomer.data.maaler_navn;
       const newMeterNumber = selectedMeter;
 
+      // KRITISK: Tjek om det er SAMME måler - undgå at nulstille forbrug
+      if (oldMeterNumber === newMeterNumber) {
+        toast.info("Kunden har allerede denne måler tildelt");
+        setShowMoveModal(false);
+        return;
+      }
+
       // Validate new meter exists by meter_number
       const { data: newMeterData } = await (supabase as any)
         .from("power_meters")
@@ -1456,8 +1463,9 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
                         );
                       }
 
-                      // Beregn total forbrug med accumulated_usage
-                      const accumulated = parseFloat(activePakker[0]?.data?.accumulated_usage || '0');
+                      // Beregn total forbrug med accumulated_usage fra ALLE pakker
+                      const accumulated = activePakker.reduce((sum: number, p: any) => 
+                        sum + parseFloat(p.data?.accumulated_usage || '0'), 0);
                       const pakkeStart = activePakker[0]?.data?.pakke_start_energy !== null && activePakker[0]?.data?.pakke_start_energy !== undefined
                         ? activePakker[0].data.pakke_start_energy
                         : selectedCustomer?.data.meter_start_energy || 0;
