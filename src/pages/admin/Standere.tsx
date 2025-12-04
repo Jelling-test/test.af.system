@@ -282,9 +282,32 @@ const Standere = () => {
 
       if (error) throw error;
 
+      // Find den tilknyttede måler
+      const assignedMeter = unassignedMeters.find(m => m.id === meterId);
+      
+      if (assignedMeter) {
+        // Opdater lokalt: Fjern fra ikke-tildelte
+        setUnassignedMeters(prev => prev.filter(m => m.id !== meterId));
+        
+        // Opdater lokalt: Tilføj til stander
+        setStands(prev => prev.map(s => {
+          if (s.id === standId) {
+            return { ...s, meters: [...s.meters, { ...assignedMeter, stand_id: standId }] };
+          }
+          return s;
+        }));
+        
+        // Opdater selectedStand så dialogen viser korrekt
+        setSelectedStand(prev => {
+          if (prev && prev.id === standId) {
+            return { ...prev, meters: [...prev.meters, { ...assignedMeter, stand_id: standId }] };
+          }
+          return prev;
+        });
+      }
+
       toast.success("Måler tilknyttet stander");
-      setAssignDialogOpen(false); // Luk dialogen
-      await fetchData(); // Opdater listen
+      // Dialog forbliver åben så brugeren kan tilføje flere
     } catch (error) {
       console.error("Fejl ved tilknytning:", error);
       toast.error("Kunne ikke tilknytte måler");
@@ -300,8 +323,39 @@ const Standere = () => {
 
       if (error) throw error;
 
+      // Find måleren der skal fjernes
+      let removedMeter: Meter | undefined;
+      
+      // Opdater lokalt: Fjern fra stander
+      setStands(prev => prev.map(s => {
+        const meter = s.meters.find(m => m.id === meterId);
+        if (meter) {
+          removedMeter = { ...meter, stand_id: null };
+          return { ...s, meters: s.meters.filter(m => m.id !== meterId) };
+        }
+        return s;
+      }));
+      
+      // Opdater selectedStand så dialogen viser korrekt
+      setSelectedStand(prev => {
+        if (prev) {
+          const meter = prev.meters.find(m => m.id === meterId);
+          if (meter) {
+            removedMeter = { ...meter, stand_id: null };
+          }
+          return { ...prev, meters: prev.meters.filter(m => m.id !== meterId) };
+        }
+        return prev;
+      });
+      
+      // Tilføj til ikke-tildelte
+      if (removedMeter) {
+        setUnassignedMeters(prev => [...prev, removedMeter!].sort((a, b) => 
+          a.meter_number.localeCompare(b.meter_number)
+        ));
+      }
+
       toast.success("Måler fjernet fra stander");
-      fetchData();
     } catch (error) {
       console.error("Fejl ved fjernelse:", error);
       toast.error("Kunne ikke fjerne måler");
@@ -596,48 +650,88 @@ const Standere = () => {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Tilføj måler til "{selectedStand?.name}"</DialogTitle>
+            <DialogTitle>Administrer målere for "{selectedStand?.name}"</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Søg efter måler..."
-                value={meterSearch}
-                onChange={(e) => setMeterSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="max-h-64 overflow-y-auto space-y-1">
-              {filteredUnassigned.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  Ingen ledige målere fundet
-                </p>
-              ) : (
-                filteredUnassigned.map((meter) => (
-                  <div
-                    key={meter.id}
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded cursor-pointer"
-                    onClick={() => {
-                      if (selectedStand) {
-                        assignMeter(meter.id, selectedStand.id);
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      {meter.is_online ? (
-                        <Zap className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <ZapOff className="h-4 w-4 text-red-500" />
-                      )}
-                      <span>{meter.meter_number}</span>
+            {/* Tilknyttede målere */}
+            {selectedStand && selectedStand.meters.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  Tilknyttede målere ({selectedStand.meters.length})
+                </Label>
+                <div className="space-y-1 mb-4">
+                  {selectedStand.meters.map((meter) => (
+                    <div
+                      key={meter.id}
+                      className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded"
+                    >
+                      <div className="flex items-center gap-2">
+                        {meter.is_online ? (
+                          <Zap className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <ZapOff className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className="font-medium">{meter.meter_number}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => unassignMeter(meter.id)}
+                      >
+                        <Unlink className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button size="sm" variant="ghost">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Søg og tilføj nye målere */}
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Tilføj flere målere
+              </Label>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Søg efter måler..."
+                  value={meterSearch}
+                  onChange={(e) => setMeterSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {filteredUnassigned.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    Ingen ledige målere fundet
+                  </p>
+                ) : (
+                  filteredUnassigned.map((meter) => (
+                    <div
+                      key={meter.id}
+                      className="flex items-center justify-between p-2 hover:bg-accent rounded cursor-pointer"
+                      onClick={() => {
+                        if (selectedStand) {
+                          assignMeter(meter.id, selectedStand.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        {meter.is_online ? (
+                          <Zap className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <ZapOff className="h-4 w-4 text-red-500" />
+                        )}
+                        <span>{meter.meter_number}</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
