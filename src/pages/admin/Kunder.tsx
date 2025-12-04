@@ -138,6 +138,7 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
   const [selectedExtraMeter, setSelectedExtraMeter] = useState<string>("");
   const [addingExtraMeter, setAddingExtraMeter] = useState(false);
   const [togglingExtraMeter, setTogglingExtraMeter] = useState<string | null>(null);
+  const [togglingPrimaryMeter, setTogglingPrimaryMeter] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -677,6 +678,38 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
       toast.error(error.message || "Fejl ved ændring af strøm");
     } finally {
       setTogglingExtraMeter(null);
+    }
+  };
+
+  // Toggle primær måler strøm
+  const handleTogglePrimaryMeter = async (turnOn: boolean) => {
+    if (!selectedCustomer?.data.maaler_navn) return;
+    
+    setTogglingPrimaryMeter(true);
+    try {
+      const newState = turnOn ? 'ON' : 'OFF';
+      
+      // Direkte insert i meter_commands
+      const { error } = await supabase
+        .from('meter_commands')
+        .insert({
+          meter_id: selectedCustomer.data.maaler_navn,
+          command: 'set_state',
+          value: newState,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast.success(`Måler ${selectedCustomer.data.maaler_navn} ${turnOn ? 'tændes' : 'slukkes'}...`);
+      
+      // Opdater lokal state efter kort delay
+      setTimeout(() => fetchCustomerDetails(selectedCustomer), 1000);
+    } catch (error: any) {
+      console.error("Error toggling primary meter:", error);
+      toast.error(error.message || "Fejl ved ændring af strøm");
+    } finally {
+      setTogglingPrimaryMeter(false);
     }
   };
 
@@ -1695,6 +1728,27 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
                               <p className="text-muted-foreground">Spænding</p>
                               <p className="font-medium">{(customerDetails.meterReading.voltage ?? 0).toFixed(0)} V</p>
                             </div>
+                          </div>
+                          {/* Tænd/Sluk knapper for primær måler */}
+                          <div className="grid grid-cols-2 gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant={customerDetails.meterReading.state === "ON" ? "outline" : "default"}
+                              onClick={() => handleTogglePrimaryMeter(true)}
+                              disabled={togglingPrimaryMeter || customerDetails.meterReading.state === "ON"}
+                            >
+                              <Power className="h-4 w-4 mr-1" />
+                              Tænd
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={customerDetails.meterReading.state !== "ON" ? "outline" : "destructive"}
+                              onClick={() => handleTogglePrimaryMeter(false)}
+                              disabled={togglingPrimaryMeter || customerDetails.meterReading.state !== "ON"}
+                            >
+                              <Power className="h-4 w-4 mr-1" />
+                              Sluk
+                            </Button>
                           </div>
                         </div>
                       )}

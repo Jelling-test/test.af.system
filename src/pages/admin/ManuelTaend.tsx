@@ -48,45 +48,64 @@ const ManuelTaend = ({ isStaff = false }: ManuelTaendProps) => {
   const fetchFreeMeters = async () => {
     setLoading(true);
     try {
-      // Hent alle målere
-      const { data: allMeters, error: metersError } = await (supabase as any)
+      // Hent KUN målere med admin_bypass (aktivt tændte)
+      const { data: bypassMeters, error: metersError } = await (supabase as any)
         .from("power_meters")
-        .select("meter_number, is_online, admin_bypass, current_customer_id")
+        .select("meter_number, is_online, admin_bypass")
+        .eq("admin_bypass", true)
+        .is("current_customer_id", null)
         .order("meter_number");
 
       if (metersError) throw metersError;
 
-      // Filtrer kun ledige målere (ingen current_customer_id)
-      const freeMeters = (allMeters || []).filter(
-        (m: any) => !m.current_customer_id
-      );
-
-      // Hent seneste state for hver ledig måler
-      const metersWithState: FreeMeter[] = [];
-      for (const meter of freeMeters) {
-        const { data: reading } = await (supabase as any)
-          .from("meter_readings")
-          .select("state, power")
-          .eq("meter_id", meter.meter_number)
-          .order("time", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        metersWithState.push({
-          meter_number: meter.meter_number,
-          is_online: meter.is_online ?? false,
-          admin_bypass: meter.admin_bypass ?? false,
-          current_state: reading?.state || "OFF",
-          last_power: reading?.power || 0,
-        });
-      }
+      const metersWithState: FreeMeter[] = (bypassMeters || []).map((m: any) => ({
+        meter_number: m.meter_number,
+        is_online: m.is_online ?? false,
+        admin_bypass: true,
+        current_state: "ON",
+        last_power: 0,
+      }));
 
       setMeters(metersWithState);
     } catch (error) {
-      console.error("Error fetching free meters:", error);
-      toast.error("Kunne ikke hente ledige målere");
+      console.error("Error fetching bypass meters:", error);
+      toast.error("Kunne ikke hente målere");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Søg efter ledige målere i databasen
+  const searchMeters = async (query: string) => {
+    if (!query || query.length < 1) {
+      setShowDropdown(false);
+      return;
+    }
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from("power_meters")
+        .select("meter_number, is_online, admin_bypass")
+        .is("current_customer_id", null)
+        .ilike("meter_number", `%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+
+      const results: FreeMeter[] = (data || []).map((m: any) => ({
+        meter_number: m.meter_number,
+        is_online: m.is_online ?? false,
+        admin_bypass: m.admin_bypass ?? false,
+        current_state: m.admin_bypass ? "ON" : "OFF",
+        last_power: 0,
+      }));
+
+      // Opdater meters med søgeresultater (behold bypass meters)
+      const bypassOnly = meters.filter(m => m.admin_bypass);
+      setMeters([...bypassOnly, ...results.filter(r => !r.admin_bypass)]);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Error searching meters:", error);
     }
   };
 
@@ -194,13 +213,13 @@ const ManuelTaend = ({ isStaff = false }: ManuelTaendProps) => {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                 <Input
-                  placeholder="Søg efter måler (f.eks. F20, 101)..."
+                  placeholder="Søg efter ledig måler (eks: 210, 101,3...)..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setShowDropdown(e.target.value.length > 0);
+                    searchMeters(e.target.value);
                   }}
-                  onFocus={() => searchQuery.length > 0 && setShowDropdown(true)}
+                  onFocus={() => searchQuery.length > 0 && searchMeters(searchQuery)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                   className="pl-10"
                 />
@@ -336,68 +355,17 @@ const ManuelTaend = ({ isStaff = false }: ManuelTaendProps) => {
               </Card>
             )}
 
-            {/* Ledige målere (ingen bypass) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Power className="h-5 w-5 text-muted-foreground" />
-                  Ledige Målere ({inactiveMeters.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : inactiveMeters.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {searchQuery
-                      ? "Ingen målere matcher søgningen"
-                      : "Alle ledige målere har admin bypass"}
+            {/* Tip: Brug søgefeltet */}
+            {activeMeters.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground py-4">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    Brug søgefeltet ovenfor for at finde og tænde en ledig måler
                   </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {inactiveMeters.map((meter) => (
-                      <div
-                        key={meter.meter_number}
-                        className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium">{meter.meter_number}</span>
-                          {meter.is_online ? (
-                            <Badge variant="default" className="text-xs">
-                              <Wifi className="h-3 w-3 mr-1" />
-                              Online
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive" className="text-xs">
-                              <WifiOff className="h-3 w-3 mr-1" />
-                              Offline
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground mb-3">
-                          Status: {meter.current_state || "Ukendt"}
-                          {meter.last_power !== undefined && meter.last_power > 0 && (
-                            <span className="ml-2">({meter.last_power.toFixed(0)} W)</span>
-                          )}
-                        </div>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handleTurnOn(meter)}
-                          disabled={!meter.is_online}
-                        >
-                          <Power className="h-4 w-4 mr-2" />
-                          Tænd
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </main>
         </div>
       </div>
