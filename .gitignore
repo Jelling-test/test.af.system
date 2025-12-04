@@ -6,8 +6,8 @@ dist/
 
 # Environment files
 .env
-.env.local
 .env.production
+# .env.local - tilladt da VITE_ variabler er offentlige
 
 # IDE
 .vscode/
