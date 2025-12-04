@@ -36,7 +36,14 @@ import {
   Settings,
   RotateCcw,
   History,
+  Server,
+  Globe,
+  Info,
+  Loader2,
+  Trash2,
+  Plus,
 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -59,6 +66,81 @@ interface SystemSettings {
   stripe_publishable_key?: string;
   stripe_test_mode?: boolean;
 }
+
+interface EmailProviderConfig {
+  id?: string;
+  name: string;
+  provider_type: 'smtp' | 'rest_api';
+  is_active: boolean;
+  from_email: string;
+  from_name: string;
+  reply_to_email: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_user?: string;
+  smtp_password_encrypted?: string;
+  smtp_secure?: 'tls' | 'ssl' | 'none';
+  api_endpoint?: string;
+  api_key_encrypted?: string;
+  api_headers?: Record<string, string>;
+  api_payload_template?: string;
+  last_test_success?: boolean;
+  last_test_at?: string;
+}
+
+// Presets for hurtig opsætning
+const EMAIL_PRESETS: Record<string, Partial<EmailProviderConfig>> = {
+  gmail: {
+    name: 'Gmail / Google Workspace',
+    provider_type: 'smtp',
+    smtp_host: 'smtp.gmail.com',
+    smtp_port: 587,
+    smtp_secure: 'tls',
+  },
+  simply: {
+    name: 'Simply.com',
+    provider_type: 'smtp',
+    smtp_host: 'websmtp.simply.com',
+    smtp_port: 587,
+    smtp_secure: 'tls',
+  },
+  brevo: {
+    name: 'Brevo',
+    provider_type: 'rest_api',
+    api_endpoint: 'https://api.brevo.com/v3/smtp/email',
+    api_headers: { 'accept': 'application/json', 'content-type': 'application/json' },
+    api_payload_template: JSON.stringify({
+      sender: { name: '{{FROM_NAME}}', email: '{{FROM_EMAIL}}' },
+      to: [{ email: '{{TO}}', name: '{{TO_NAME}}' }],
+      replyTo: { email: '{{REPLY_TO}}' },
+      subject: '{{SUBJECT}}',
+      htmlContent: '{{HTML}}'
+    }, null, 2),
+  },
+  mailgun: {
+    name: 'Mailgun',
+    provider_type: 'rest_api',
+    api_endpoint: 'https://api.mailgun.net/v3/YOUR_DOMAIN/messages',
+    api_headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  },
+  resend: {
+    name: 'Resend',
+    provider_type: 'rest_api',
+    api_endpoint: 'https://api.resend.com/emails',
+    api_headers: { 'Content-Type': 'application/json' },
+    api_payload_template: JSON.stringify({
+      from: '{{FROM_NAME}} <{{FROM_EMAIL}}>',
+      to: ['{{TO}}'],
+      reply_to: '{{REPLY_TO}}',
+      subject: '{{SUBJECT}}',
+      html: '{{HTML}}'
+    }, null, 2),
+  },
+  custom: {
+    name: 'Custom',
+    provider_type: 'smtp',
+  },
+};
 
 const AdminIndstillinger = () => {
   const [loading, setLoading] = useState(true);
@@ -91,13 +173,190 @@ const AdminIndstillinger = () => {
   const [restorePreview, setRestorePreview] = useState<{ieee_address: string, current_name: string, restore_name: string}[]>([]);
   const [restoring, setRestoring] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  
+  // Email Provider states
+  const [emailProviders, setEmailProviders] = useState<EmailProviderConfig[]>([]);
+  const [editingProvider, setEditingProvider] = useState<EmailProviderConfig | null>(null);
+  const [showProviderForm, setShowProviderForm] = useState(false);
+  const [testingProvider, setTestingProvider] = useState(false);
+  const [providerTestSuccess, setProviderTestSuccess] = useState<boolean | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingProvider, setSavingProvider] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchSystemStats();
     fetchEmailTemplates();
     fetchRestoreDates();
+    fetchEmailProviders();
   }, []);
+  
+  // Email Provider functions
+  const fetchEmailProviders = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('email_provider_config')
+        .select('*')
+        .order('is_active', { ascending: false });
+      
+      if (error) throw error;
+      setEmailProviders(data || []);
+    } catch (error) {
+      console.error('Error fetching email providers:', error);
+    }
+  };
+  
+  const handlePresetSelect = (presetKey: string) => {
+    const preset = EMAIL_PRESETS[presetKey];
+    if (preset) {
+      setEditingProvider({
+        name: preset.name || '',
+        provider_type: preset.provider_type || 'smtp',
+        is_active: false,
+        from_email: 'noreply@jellingcamping.dk',
+        from_name: 'Jelling Camping',
+        reply_to_email: 'peter@jellingcamping.dk',
+        smtp_host: preset.smtp_host,
+        smtp_port: preset.smtp_port,
+        smtp_secure: preset.smtp_secure,
+        api_endpoint: preset.api_endpoint,
+        api_headers: preset.api_headers,
+        api_payload_template: preset.api_payload_template,
+      });
+      setShowProviderForm(true);
+      setProviderTestSuccess(null);
+    }
+  };
+  
+  const handleTestProvider = async () => {
+    if (!editingProvider) return;
+    
+    setTestingProvider(true);
+    setProviderTestSuccess(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: settings.admin_email || 'peter@jellingcamping.dk',
+          subject: 'Test email - Email Provider Configuration',
+          html: `
+            <h1>Test Email</h1>
+            <p>Dette er en test email fra din nye email provider konfiguration.</p>
+            <p><strong>Provider:</strong> ${editingProvider.name}</p>
+            <p><strong>Type:</strong> ${editingProvider.provider_type}</p>
+            <p><strong>Tidspunkt:</strong> ${new Date().toLocaleString('da-DK')}</p>
+            <hr>
+            <p style="color: #22c55e;">✅ Hvis du modtager denne email, virker din konfiguration!</p>
+          `,
+          from_email: editingProvider.from_email,
+          from_name: editingProvider.from_name,
+          reply_to: editingProvider.reply_to_email,
+        },
+      });
+      
+      if (error) throw error;
+      
+      setProviderTestSuccess(true);
+      toast.success('Test email sendt! Tjek din indbakke.');
+    } catch (error) {
+      console.error('Test failed:', error);
+      setProviderTestSuccess(false);
+      toast.error('Test fejlede: ' + (error as Error).message);
+    } finally {
+      setTestingProvider(false);
+    }
+  };
+  
+  const handleSaveProvider = async () => {
+    if (!editingProvider) return;
+    
+    // Validering
+    if (editingProvider.provider_type === 'smtp') {
+      if (!editingProvider.smtp_host || !editingProvider.smtp_port || !editingProvider.smtp_user) {
+        toast.error('Udfyld alle SMTP felter');
+        return;
+      }
+    } else {
+      if (!editingProvider.api_endpoint || !editingProvider.api_key_encrypted) {
+        toast.error('Udfyld API endpoint og API key');
+        return;
+      }
+    }
+    
+    setSavingProvider(true);
+    
+    try {
+      const providerData = {
+        ...editingProvider,
+        organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      };
+      
+      if (editingProvider.id) {
+        const { error } = await (supabase as any)
+          .from('email_provider_config')
+          .update(providerData)
+          .eq('id', editingProvider.id);
+        
+        if (error) throw error;
+        toast.success('Provider opdateret');
+      } else {
+        const { error } = await (supabase as any)
+          .from('email_provider_config')
+          .insert(providerData);
+        
+        if (error) throw error;
+        toast.success('Provider oprettet');
+      }
+      
+      setShowProviderForm(false);
+      setEditingProvider(null);
+      fetchEmailProviders();
+    } catch (error) {
+      console.error('Error saving provider:', error);
+      toast.error('Fejl ved gemning: ' + (error as Error).message);
+    } finally {
+      setSavingProvider(false);
+    }
+  };
+  
+  const handleActivateProvider = async (provider: EmailProviderConfig) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('email_provider_config')
+        .update({ is_active: true })
+        .eq('id', provider.id);
+      
+      if (error) throw error;
+      
+      toast.success(`${provider.name} er nu aktiv`);
+      fetchEmailProviders();
+    } catch (error) {
+      console.error('Error activating provider:', error);
+      toast.error('Fejl ved aktivering');
+    }
+  };
+  
+  const handleDeleteProvider = async (provider: EmailProviderConfig) => {
+    if (provider.is_active) {
+      toast.error('Kan ikke slette aktiv provider');
+      return;
+    }
+    
+    try {
+      const { error } = await (supabase as any)
+        .from('email_provider_config')
+        .delete()
+        .eq('id', provider.id);
+      
+      if (error) throw error;
+      
+      toast.success('Provider slettet');
+      fetchEmailProviders();
+    } catch (error) {
+      console.error('Error deleting provider:', error);
+      toast.error('Fejl ved sletning');
+    }
+  };
   
   const fetchRestoreDates = async () => {
     try {
@@ -508,6 +767,399 @@ const AdminIndstillinger = () => {
                   <Save className="mr-2 h-4 w-4" />
                   Gem indstillinger
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Email Provider Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Server className="h-5 w-5" />
+                  Email Provider
+                </CardTitle>
+                <CardDescription>
+                  Konfigurer hvilken email-udbyder systemet bruger til at sende emails.
+                  Du kan skifte mellem SMTP (Gmail, Simply) og REST API (Brevo, Mailgun, Resend).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Eksisterende providers */}
+                {emailProviders.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Konfigurerede providers</Label>
+                    <div className="space-y-2">
+                      {emailProviders.map((provider) => (
+                        <div 
+                          key={provider.id} 
+                          className={`flex items-center justify-between p-3 border rounded-lg ${
+                            provider.is_active ? 'border-green-500 bg-green-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {provider.provider_type === 'smtp' ? (
+                              <Server className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Globe className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <div>
+                              <p className="font-medium">{provider.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {provider.provider_type.toUpperCase()} • {provider.from_email}
+                              </p>
+                            </div>
+                            {provider.is_active && (
+                              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                Aktiv
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            {!provider.is_active && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleActivateProvider(provider)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Aktivér
+                              </Button>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setEditingProvider(provider);
+                                setShowProviderForm(true);
+                                setProviderTestSuccess(null);
+                              }}
+                            >
+                              Rediger
+                            </Button>
+                            {!provider.is_active && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteProvider(provider)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tilføj ny provider */}
+                {!showProviderForm && (
+                  <div className="space-y-3">
+                    <Label>Tilføj ny provider</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('gmail')}>
+                        Gmail
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('simply')}>
+                        Simply.com
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('brevo')}>
+                        Brevo
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('mailgun')}>
+                        Mailgun
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('resend')}>
+                        Resend
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handlePresetSelect('custom')}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Custom
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Provider formular */}
+                {showProviderForm && editingProvider && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold">
+                        {editingProvider.id ? 'Rediger' : 'Ny'} Provider: {editingProvider.name}
+                      </h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setShowProviderForm(false);
+                          setEditingProvider(null);
+                        }}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Provider type */}
+                    <div className="space-y-2">
+                      <Label>Provider Type</Label>
+                      <RadioGroup
+                        value={editingProvider.provider_type}
+                        onValueChange={(value: 'smtp' | 'rest_api') => 
+                          setEditingProvider({ ...editingProvider, provider_type: value })
+                        }
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="smtp" id="smtp" />
+                          <Label htmlFor="smtp" className="cursor-pointer">SMTP (Gmail, Simply, etc.)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rest_api" id="rest_api" />
+                          <Label htmlFor="rest_api" className="cursor-pointer">REST API (Brevo, Mailgun, etc.)</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Afsender indstillinger */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="provider-from-email">Afsender Email</Label>
+                        <Input
+                          id="provider-from-email"
+                          type="email"
+                          placeholder="noreply@jellingcamping.dk"
+                          value={editingProvider.from_email}
+                          onChange={(e) => setEditingProvider({ 
+                            ...editingProvider, 
+                            from_email: e.target.value 
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="provider-from-name">Afsender Navn</Label>
+                        <Input
+                          id="provider-from-name"
+                          placeholder="Jelling Camping"
+                          value={editingProvider.from_name}
+                          onChange={(e) => setEditingProvider({ 
+                            ...editingProvider, 
+                            from_name: e.target.value 
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="provider-reply-to">Reply-To Email</Label>
+                        <Input
+                          id="provider-reply-to"
+                          type="email"
+                          placeholder="info@jellingcamping.dk"
+                          value={editingProvider.reply_to_email}
+                          onChange={(e) => setEditingProvider({ 
+                            ...editingProvider, 
+                            reply_to_email: e.target.value 
+                          })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Når kunder svarer på emails, sendes svaret hertil
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SMTP felter */}
+                    {editingProvider.provider_type === 'smtp' && (
+                      <div className="space-y-4 p-3 bg-background rounded border">
+                        <div className="flex items-center gap-2 text-sm text-blue-600">
+                          <Info className="h-4 w-4" />
+                          <span>Gmail kræver App Password - ikke din normale adgangskode</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp-host">SMTP Host</Label>
+                            <Input
+                              id="smtp-host"
+                              placeholder="smtp.gmail.com"
+                              value={editingProvider.smtp_host || ''}
+                              onChange={(e) => setEditingProvider({ 
+                                ...editingProvider, 
+                                smtp_host: e.target.value 
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp-port">Port</Label>
+                            <Input
+                              id="smtp-port"
+                              type="number"
+                              placeholder="587"
+                              value={editingProvider.smtp_port || ''}
+                              onChange={(e) => setEditingProvider({ 
+                                ...editingProvider, 
+                                smtp_port: parseInt(e.target.value) 
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp-user">Brugernavn</Label>
+                            <Input
+                              id="smtp-user"
+                              placeholder="din@email.dk"
+                              value={editingProvider.smtp_user || ''}
+                              onChange={(e) => setEditingProvider({ 
+                                ...editingProvider, 
+                                smtp_user: e.target.value 
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp-password">Password / App Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="smtp-password"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••••••••••"
+                                value={editingProvider.smtp_password_encrypted || ''}
+                                onChange={(e) => setEditingProvider({ 
+                                  ...editingProvider, 
+                                  smtp_password_encrypted: e.target.value 
+                                })}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp-secure">Sikkerhed</Label>
+                            <Select
+                              value={editingProvider.smtp_secure || 'tls'}
+                              onValueChange={(value: 'tls' | 'ssl' | 'none') => 
+                                setEditingProvider({ ...editingProvider, smtp_secure: value })
+                              }
+                            >
+                              <SelectTrigger id="smtp-secure">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tls">TLS (anbefalet)</SelectItem>
+                                <SelectItem value="ssl">SSL</SelectItem>
+                                <SelectItem value="none">Ingen</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* REST API felter */}
+                    {editingProvider.provider_type === 'rest_api' && (
+                      <div className="space-y-4 p-3 bg-background rounded border">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="api-endpoint">API Endpoint</Label>
+                            <Input
+                              id="api-endpoint"
+                              placeholder="https://api.brevo.com/v3/smtp/email"
+                              value={editingProvider.api_endpoint || ''}
+                              onChange={(e) => setEditingProvider({ 
+                                ...editingProvider, 
+                                api_endpoint: e.target.value 
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="api-key">API Key</Label>
+                            <div className="relative">
+                              <Input
+                                id="api-key"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="din-api-key"
+                                value={editingProvider.api_key_encrypted || ''}
+                                onChange={(e) => setEditingProvider({ 
+                                  ...editingProvider, 
+                                  api_key_encrypted: e.target.value 
+                                })}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="api-payload">Payload Template (JSON)</Label>
+                            <Textarea
+                              id="api-payload"
+                              rows={8}
+                              className="font-mono text-sm"
+                              placeholder='{"sender": {"name": "{{FROM_NAME}}", "email": "{{FROM_EMAIL}}"}, ...}'
+                              value={editingProvider.api_payload_template || ''}
+                              onChange={(e) => setEditingProvider({ 
+                                ...editingProvider, 
+                                api_payload_template: e.target.value 
+                              })}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Variabler: {'{{TO}}'}, {'{{SUBJECT}}'}, {'{{HTML}}'}, {'{{FROM_EMAIL}}'}, {'{{FROM_NAME}}'}, {'{{REPLY_TO}}'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Test og Gem knapper */}
+                    <div className="flex items-center gap-3 pt-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleTestProvider}
+                        disabled={testingProvider}
+                      >
+                        {testingProvider ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <TestTube className="h-4 w-4 mr-2" />
+                        )}
+                        Test Email
+                      </Button>
+                      
+                      {providerTestSuccess !== null && (
+                        <span className={`flex items-center gap-1 text-sm ${
+                          providerTestSuccess ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {providerTestSuccess ? (
+                            <><CheckCircle className="h-4 w-4" /> Test OK</>
+                          ) : (
+                            <><XCircle className="h-4 w-4" /> Test fejlet</>
+                          )}
+                        </span>
+                      )}
+                      
+                      <div className="flex-1" />
+                      
+                      <Button
+                        onClick={handleSaveProvider}
+                        disabled={savingProvider}
+                      >
+                        {savingProvider ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Gem Provider
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
