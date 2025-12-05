@@ -1,0 +1,46 @@
+# PATCH: Fix is_online synchronization in device_sync.py
+# Version: 2.2.1 (Fixed is_online sync)
+# Date: 2025-12-05
+
+## Problem
+Måler 123 vises online i frontend men offline i Z2M UI fordi is_online ikke synkroniseres fra availability.
+
+## Root Cause
+upsert_meter_identity() kalder upsert_power_meter() uden availability parameter, så is_online altid sættes til default true.
+
+## Fix Applied
+
+### File: device_sync.py
+Line 208-210 (before):
+```python
+upsert_power_meter(friendly_name, base_topic)
+sb.table("meter_identity").upsert(payload, on_conflict="ieee_address").execute()
+```
+
+Line 208-211 (after):
+```python
+# Opdater is_online baseret på availability
+is_online = availability == "online" if availability else True
+upsert_power_meter(friendly_name, base_topic, is_online)
+sb.table("meter_identity").upsert(payload, on_conflict="ieee_address").execute()
+```
+
+Line 330 (before):
+```python
+upsert_power_meter(new_name, base_topic)
+```
+
+Line 330 (after):
+```python
+upsert_power_meter(new_name, base_topic, True)  # New devices default to online
+```
+
+## Result
+- power_meters.is_online synkroniseres nu med Z2M availability
+- Frontend viser korrekt online/offline status
+- Konsistent mellem Z2M UI og webapp
+
+## Deployment
+1. Copy fixed device_sync.py to NAS: /jelling-power-system/device-sync/
+2. Restart container: docker-compose restart device-sync
+3. Verify fix: Check måler 123 status after 5 minutes
