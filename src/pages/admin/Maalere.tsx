@@ -52,6 +52,9 @@ import {
   CheckCircle,
   X,
   Settings,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 interface Meter {
@@ -97,6 +100,10 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
   const [availableEntities, setAvailableEntities] = useState<string[]>([]);
   const [discoveredMeters, setDiscoveredMeters] = useState<string[]>([]);
   const [showConfigureModal, setShowConfigureModal] = useState(false);
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [configuringMeters, setConfiguringMeters] = useState(false);
   const [configurationProgress, setConfigurationProgress] = useState({ current: 0, total: 0, currentMeter: '' });
 
@@ -113,7 +120,7 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
 
   useEffect(() => {
     filterMeters();
-  }, [meters, searchTerm, statusFilter]);
+  }, [meters, searchTerm, statusFilter, sortColumn, sortDirection]);
 
   const fetchMeters = async () => {
     try {
@@ -197,7 +204,57 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
       );
     }
 
+    // Sort if a column is selected
+    if (sortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        let aVal: any = a[sortColumn as keyof Meter];
+        let bVal: any = b[sortColumn as keyof Meter];
+        
+        // Handle null/undefined
+        if (aVal == null) aVal = sortDirection === 'asc' ? Infinity : -Infinity;
+        if (bVal == null) bVal = sortDirection === 'asc' ? Infinity : -Infinity;
+        
+        // Numeric comparison
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        // String comparison
+        const aStr = String(aVal).toLowerCase();
+        const bStr = String(bVal).toLowerCase();
+        if (sortDirection === 'asc') {
+          return aStr.localeCompare(bStr);
+        } else {
+          return bStr.localeCompare(aStr);
+        }
+      });
+    }
+
     setFilteredMeters(filtered);
+  };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Toggle direction or clear sort
+      if (sortDirection === 'desc') {
+        setSortDirection('asc');
+      } else {
+        setSortColumn(null);
+        setSortDirection('desc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
+    }
+    return sortDirection === 'desc' 
+      ? <ArrowDown className="ml-1 h-3 w-3" />
+      : <ArrowUp className="ml-1 h-3 w-3" />;
   };
 
   const checkNameAvailability = async (name: string) => {
@@ -481,14 +538,62 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
                             }}
                           />
                         </TableHead>
-                        <TableHead>Måler ID</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('meter_id')}
+                        >
+                          <div className="flex items-center">
+                            Måler ID
+                            <SortIcon column="meter_id" />
+                          </div>
+                        </TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Optaget/Ledig</TableHead>
-                        <TableHead>Effekt (W)</TableHead>
-                        <TableHead>Strøm (A)</TableHead>
-                        <TableHead>Spænding (V)</TableHead>
-                        <TableHead>Energi (kWh)</TableHead>
-                        <TableHead>Signal</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('power')}
+                        >
+                          <div className="flex items-center">
+                            Effekt (W)
+                            <SortIcon column="power" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('current')}
+                        >
+                          <div className="flex items-center">
+                            Strøm (A)
+                            <SortIcon column="current" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('voltage')}
+                        >
+                          <div className="flex items-center">
+                            Spænding (V)
+                            <SortIcon column="voltage" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('energy')}
+                        >
+                          <div className="flex items-center">
+                            Energi (kWh)
+                            <SortIcon column="energy" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('linkquality')}
+                        >
+                          <div className="flex items-center">
+                            Signal
+                            <SortIcon column="linkquality" />
+                          </div>
+                        </TableHead>
                         <TableHead>Sidst set</TableHead>
                         <TableHead className="w-12">Actions</TableHead>
                       </TableRow>
