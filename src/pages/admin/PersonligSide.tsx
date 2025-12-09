@@ -130,7 +130,8 @@ const PersonligSide = () => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<BakeryOrder[]>([]);
-  const [ordersDateFilter, setOrdersDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [ordersDateFilter, setOrdersDateFilter] = useState<string>('');
+  const [showBakeryOrders, setShowBakeryOrders] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingToken, setGeneratingToken] = useState<number | null>(null);
@@ -278,9 +279,11 @@ const PersonligSide = () => {
   const fetchBakeryOrders = async (date?: string) => {
     try {
       const filterDate = date || ordersDateFilter;
-      const response = await fetch(
-        `https://jkmqliztlhmfyejhmuil.supabase.co/functions/v1/bakery-api?action=admin-orders&date=${filterDate}`
-      );
+      let url = 'https://jkmqliztlhmfyejhmuil.supabase.co/functions/v1/bakery-api?action=admin-orders';
+      if (filterDate) {
+        url += `&date=${filterDate}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setBakeryOrders(data.orders || []);
@@ -732,27 +735,27 @@ const PersonligSide = () => {
               {/* Sub-navigation for Bageri */}
               <div className="flex gap-2 mb-4">
                 <Button 
-                  variant={!bakeryOrders.length || bakeryProducts.length ? "default" : "outline"} 
+                  variant={!showBakeryOrders ? "default" : "outline"} 
                   size="sm"
-                  onClick={() => { setBakeryOrders([]); }}
+                  onClick={() => { setShowBakeryOrders(false); }}
                   className="flex items-center gap-2"
                 >
                   <Croissant className="h-4 w-4" />
                   Produkter
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant={showBakeryOrders ? "default" : "outline"} 
                   size="sm"
-                  onClick={() => fetchBakeryOrders()}
+                  onClick={() => { setShowBakeryOrders(true); fetchBakeryOrders(); }}
                   className="flex items-center gap-2"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  Bestillinger
+                  Vis Bestillinger
                 </Button>
               </div>
 
-              {/* Produkter sektion - vis når ingen ordrer er loaded */}
-              {bakeryOrders.length === 0 && (
+              {/* Produkter sektion */}
+              {!showBakeryOrders && (
               <Card>
                 <CardHeader>
                   <CardTitle>Bageri Produkter</CardTitle>
@@ -828,8 +831,8 @@ const PersonligSide = () => {
               </Card>
               )}
 
-              {/* Bestillinger sektion - vis når ordrer er loaded */}
-              {bakeryOrders.length > 0 && (
+              {/* Bestillinger sektion */}
+              {showBakeryOrders && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
