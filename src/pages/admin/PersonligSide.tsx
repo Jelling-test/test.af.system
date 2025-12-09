@@ -596,10 +596,6 @@ const PersonligSide = () => {
                 <Croissant className="h-4 w-4" />
                 Bageri
               </TabsTrigger>
-              <TabsTrigger value="orders" className="flex items-center gap-2" onClick={() => fetchBakeryOrders()}>
-                <ShoppingCart className="h-4 w-4" />
-                Bestillinger
-              </TabsTrigger>
               <TabsTrigger value="info" className="flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Portal Info
@@ -733,6 +729,30 @@ const PersonligSide = () => {
 
             {/* BAGERI TAB */}
             <TabsContent value="bakery" className="space-y-4">
+              {/* Sub-navigation for Bageri */}
+              <div className="flex gap-2 mb-4">
+                <Button 
+                  variant={!bakeryOrders.length || bakeryProducts.length ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => { setBakeryOrders([]); }}
+                  className="flex items-center gap-2"
+                >
+                  <Croissant className="h-4 w-4" />
+                  Produkter
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fetchBakeryOrders()}
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Bestillinger
+                </Button>
+              </div>
+
+              {/* Produkter sektion - vis når ingen ordrer er loaded */}
+              {bakeryOrders.length === 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Bageri Produkter</CardTitle>
@@ -806,10 +826,10 @@ const PersonligSide = () => {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* BESTILLINGER TAB */}
-            <TabsContent value="orders" className="space-y-4">
+              {/* Bestillinger sektion - vis når ordrer er loaded */}
+              {bakeryOrders.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -907,6 +927,7 @@ const PersonligSide = () => {
                   )}
                 </CardContent>
               </Card>
+              )}
             </TabsContent>
 
             {/* PORTAL INFO TAB */}
