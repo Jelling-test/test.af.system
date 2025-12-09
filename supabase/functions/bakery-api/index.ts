@@ -105,6 +105,109 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // GET ALL PRODUCTS (Admin - includes inactive)
+    if (action === 'admin-get-products' && req.method === 'GET') {
+      const { data: products, error } = await supabase
+        .from('bakery_products')
+        .select('*')
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+
+      const mappedProducts = (products || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        name_da: p.name,
+        name_en: p.name_en || '',
+        name_de: p.name_de || '',
+        description_da: p.description || '',
+        description_en: p.description_en || '',
+        description_de: p.description_de || '',
+        price: p.price,
+        max_per_order: p.max_per_order || 10,
+        image_url: p.image_url,
+        is_available: p.is_available,
+        is_active: p.is_available,
+        sort_order: p.sort_order || 0,
+        category: p.category || 'bread'
+      }));
+
+      return new Response(
+        JSON.stringify({ success: true, products: mappedProducts }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // SAVE PRODUCT (Admin - create or update)
+    if (action === 'admin-save-product' && req.method === 'POST') {
+      const productData = await req.json();
+      
+      const dbData = {
+        name: productData.name_da || productData.name,
+        name_en: productData.name_en || null,
+        name_de: productData.name_de || null,
+        description: productData.description_da || null,
+        description_en: productData.description_en || null,
+        description_de: productData.description_de || null,
+        price: productData.price || 0,
+        max_per_order: productData.max_per_order || 10,
+        image_url: productData.image_url || null,
+        is_available: productData.is_active ?? true,
+        sort_order: productData.sort_order || 99,
+        category: productData.category || 'bread',
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
+      if (productData.id) {
+        // Update existing
+        result = await supabase
+          .from('bakery_products')
+          .update(dbData)
+          .eq('id', productData.id)
+          .select()
+          .single();
+      } else {
+        // Create new
+        result = await supabase
+          .from('bakery_products')
+          .insert(dbData)
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
+
+      return new Response(
+        JSON.stringify({ success: true, product: result.data }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // DELETE PRODUCT (Admin)
+    if (action === 'admin-delete-product' && req.method === 'POST') {
+      const { id } = await req.json();
+      
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'Product ID required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { error } = await supabase
+        .from('bakery_products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Produkt slettet' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET ORDERS for a booking
     if ((action === 'orders' || action === 'get-orders') && req.method === 'GET') {
       const bookingId = url.searchParams.get('booking_id');

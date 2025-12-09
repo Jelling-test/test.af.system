@@ -45,16 +45,16 @@ interface BakerySettings {
 
 interface BakeryProduct {
   id: string;
-  name: string;
-  name_en?: string;
-  name_de?: string;
-  description?: string;
-  description_en?: string;
-  description_de?: string;
+  name_da: string;
+  name_en: string;
+  name_de: string;
+  description_da: string;
+  description_en: string;
+  description_de: string;
   price: number;
   max_per_order: number;
   image_url?: string;
-  is_available: boolean;
+  is_active: boolean;
   sort_order: number;
   category?: string;
 }
@@ -99,11 +99,11 @@ const defaultSettings: BakerySettings = {
 
 const emptyProduct: Omit<BakeryProduct, 'id'> = {
   sort_order: 99,
-  is_available: true,
-  name: '',
+  is_active: true,
+  name_da: '',
   name_en: '',
   name_de: '',
-  description: '',
+  description_da: '',
   description_en: '',
   description_de: '',
   price: 0,
@@ -153,26 +153,10 @@ const AdminBageri = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`${API_URL}?action=get-products`, { headers: apiHeaders });
+      const res = await fetch(`${API_URL}?action=admin-get-products`, { headers: apiHeaders });
       const data = await res.json();
       if (data.success) {
-        // Map from API format to our format
-        const mapped = (data.products || []).map((p: any) => ({
-          id: p.id,
-          name: p.name_da || p.name,
-          name_en: p.name_en,
-          name_de: p.name_de,
-          description: p.description_da || p.description,
-          description_en: p.description_en,
-          description_de: p.description_de,
-          price: p.price,
-          max_per_order: p.max_per_order || 10,
-          image_url: p.image_url,
-          is_available: p.is_active !== false,
-          sort_order: p.sort_order || 0,
-          category: p.category || 'bread'
-        }));
-        setProducts(mapped);
+        setProducts(data.products || []);
       }
     } catch (err) {
       console.error('Fejl ved hentning af produkter:', err);
@@ -217,6 +201,74 @@ const AdminBageri = () => {
       toast.error('Kunne ikke gemme indstillinger');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ==================== PRODUCT HANDLERS ====================
+
+  const handleSaveProduct = async () => {
+    if (!editingProduct) return;
+    
+    setSaving(true);
+    try {
+      const productData = {
+        id: isCreatingProduct ? undefined : editingProduct.id,
+        sort_order: editingProduct.sort_order || 99,
+        is_active: editingProduct.is_active ?? true,
+        name_da: editingProduct.name_da || '',
+        name_en: editingProduct.name_en || '',
+        name_de: editingProduct.name_de || '',
+        description_da: editingProduct.description_da || '',
+        description_en: editingProduct.description_en || '',
+        description_de: editingProduct.description_de || '',
+        price: editingProduct.price || 0,
+        max_per_order: editingProduct.max_per_order || 10,
+        image_url: editingProduct.image_url || '',
+      };
+
+      const res = await fetch(`${API_URL}?action=admin-save-product`, {
+        method: 'POST',
+        headers: apiHeaders,
+        body: JSON.stringify(productData)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(isCreatingProduct ? 'Produkt oprettet' : 'Produkt opdateret');
+        await fetchProducts();
+        setEditingProduct(null);
+        setIsCreatingProduct(false);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      console.error('Fejl ved gemning:', err);
+      toast.error('Kunne ikke gemme produkt');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('Er du sikker på at du vil slette dette produkt?')) return;
+    
+    try {
+      const res = await fetch(`${API_URL}?action=admin-delete-product`, {
+        method: 'POST',
+        headers: apiHeaders,
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success('Produkt slettet');
+        await fetchProducts();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      console.error('Fejl ved sletning:', err);
+      toast.error('Kunne ikke slette produkt');
     }
   };
 
@@ -608,37 +660,200 @@ const AdminBageri = () => {
             <TabsContent value="products" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">Produkter ({products.length})</h2>
-                <p className="text-sm text-gray-500">Produkter administreres under Personlig Side → Bageri</p>
+                <Button onClick={() => { setEditingProduct(emptyProduct as any); setIsCreatingProduct(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tilføj produkt
+                </Button>
               </div>
 
-              {/* Products list (read-only view) */}
-              <div className="space-y-3">
-                {products.map((product) => (
-                  <Card key={product.id} className={!product.is_available ? 'opacity-50' : ''}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} className="h-16 w-24 object-cover rounded-lg" />
-                        ) : (
-                          <div className="h-16 w-24 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <ImageIcon className="h-6 w-6 text-gray-300" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{product.name}</span>
-                            {!product.is_available && <Badge variant="secondary">Inaktiv</Badge>}
-                          </div>
-                          <p className="text-sm text-gray-500">{product.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-teal-600">{product.price} kr</div>
-                          <p className="text-xs text-gray-400">Max {product.max_per_order} pr. ordre</p>
+              {/* Product edit form */}
+              {editingProduct && (
+                <Card className="border-teal-200 bg-teal-50">
+                  <CardHeader>
+                    <CardTitle>{isCreatingProduct ? 'Nyt produkt' : 'Rediger produkt'}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Navn (dansk)</Label>
+                        <Input
+                          value={editingProduct.name_da || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, name_da: e.target.value })}
+                          placeholder="Rundstykker"
+                        />
+                      </div>
+                      <div>
+                        <Label>Navn (engelsk)</Label>
+                        <Input
+                          value={editingProduct.name_en || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, name_en: e.target.value })}
+                          placeholder="Bread rolls"
+                        />
+                      </div>
+                      <div>
+                        <Label>Navn (tysk)</Label>
+                        <Input
+                          value={editingProduct.name_de || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, name_de: e.target.value })}
+                          placeholder="Brötchen"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Beskrivelse (dansk)</Label>
+                        <Textarea
+                          value={editingProduct.description_da || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, description_da: e.target.value })}
+                          placeholder="Friske morgenbrød"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label>Beskrivelse (engelsk)</Label>
+                        <Textarea
+                          value={editingProduct.description_en || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, description_en: e.target.value })}
+                          placeholder="Fresh morning rolls"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label>Beskrivelse (tysk)</Label>
+                        <Textarea
+                          value={editingProduct.description_de || ''}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, description_de: e.target.value })}
+                          placeholder="Frische Morgenbrötchen"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label>Pris (DKK)</Label>
+                        <Input
+                          type="number"
+                          value={editingProduct.price || 0}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Max pr. ordre</Label>
+                        <Input
+                          type="number"
+                          value={editingProduct.max_per_order || 10}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, max_per_order: parseInt(e.target.value) || 10 })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Sortering</Label>
+                        <Input
+                          type="number"
+                          value={editingProduct.sort_order || 99}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, sort_order: parseInt(e.target.value) || 99 })}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={editingProduct.is_active ?? true}
+                            onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, is_active: checked })}
+                          />
+                          <Label>Aktiv</Label>
                         </div>
                       </div>
+                    </div>
+
+                    <div>
+                      <Label>Billede URL</Label>
+                      <Input
+                        value={editingProduct.image_url || ''}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
+                        placeholder="https://..."
+                      />
+                      {editingProduct.image_url && (
+                        <img 
+                          src={editingProduct.image_url} 
+                          alt="Preview" 
+                          className="mt-2 h-24 w-36 object-cover rounded-lg"
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button onClick={handleSaveProduct} disabled={saving}>
+                        {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                        Gem
+                      </Button>
+                      <Button variant="outline" onClick={() => { setEditingProduct(null); setIsCreatingProduct(false); }}>
+                        <X className="h-4 w-4 mr-2" />
+                        Annuller
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Products list */}
+              <div className="space-y-3">
+                {products.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>Ingen produkter endnu</p>
+                      <p className="text-sm">Klik "Tilføj produkt" for at oprette det første</p>
                     </CardContent>
                   </Card>
-                ))}
+                ) : (
+                  products.map((product) => (
+                    <Card key={product.id} className={!product.is_active ? 'opacity-50' : ''}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name_da} className="h-16 w-24 object-cover rounded-lg" />
+                          ) : (
+                            <div className="h-16 w-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <ImageIcon className="h-6 w-6 text-gray-300" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{product.name_da}</span>
+                              {!product.is_active && <Badge variant="secondary">Inaktiv</Badge>}
+                            </div>
+                            <p className="text-sm text-gray-500">{product.description_da}</p>
+                            <p className="text-sm text-gray-400">
+                              EN: {product.name_en || '-'} • DE: {product.name_de || '-'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-teal-600">{product.price} kr</div>
+                            <p className="text-xs text-gray-400">Max {product.max_per_order} pr. ordre</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => { setEditingProduct(product); setIsCreatingProduct(false); }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              className="text-red-600"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
 
