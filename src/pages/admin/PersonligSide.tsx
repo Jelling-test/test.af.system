@@ -844,11 +844,27 @@ const PersonligSide = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-4 mb-4 flex-wrap">
+                    <Button 
+                      variant={!ordersDateFilter ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => { setOrdersDateFilter(''); fetchBakeryOrders(''); }}
+                    >
+                      Alle
+                    </Button>
+                    <Button 
+                      variant={ordersDateFilter === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "default" : "outline"} 
+                      size="sm"
+                      onClick={() => { 
+                        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                        setOrdersDateFilter(tomorrow); 
+                        fetchBakeryOrders(tomorrow); 
+                      }}
+                    >
+                      I morgen
+                    </Button>
                     <div className="flex items-center gap-2">
-                      <label htmlFor="order-date" className="text-sm font-medium">Dato:</label>
                       <Input
-                        id="order-date"
                         type="date"
                         value={ordersDateFilter}
                         onChange={(e) => {
@@ -858,16 +874,15 @@ const PersonligSide = () => {
                         className="w-auto"
                       />
                     </div>
-                    <Button variant="outline" onClick={() => fetchBakeryOrders()}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Opdater
+                    <Button variant="outline" size="sm" onClick={() => fetchBakeryOrders()}>
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
 
                   {bakeryOrders.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Ingen bestillinger for denne dato</p>
+                      <p>{ordersDateFilter ? 'Ingen bestillinger for denne dato' : 'Ingen bestillinger endnu'}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -884,6 +899,9 @@ const PersonligSide = () => {
                                 </div>
                                 <p className="text-sm"><strong>Kunde:</strong> {order.customer_name}</p>
                                 <p className="text-sm"><strong>Booking:</strong> {order.booking_id}</p>
+                                <p className="text-sm font-medium text-teal-600">
+                                  <strong>Afhentning:</strong> {new Date(order.pickup_date).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
                                   Bestilt: {new Date(order.created_at).toLocaleString('da-DK')}
                                 </p>
