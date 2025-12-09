@@ -237,7 +237,7 @@ const AdminExternalEvents = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate('/admin/dashboard')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-800">Attraktioner i nærheden</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Events i nærheden</h1>
           </div>
         </div>
 
