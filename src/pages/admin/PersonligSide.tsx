@@ -78,6 +78,7 @@ const PersonligSide = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingToken, setGeneratingToken] = useState<number | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -151,6 +152,29 @@ const PersonligSide = () => {
     const link = `https://jelling.vercel.app/m/${bookingId}/${token}`;
     navigator.clipboard.writeText(link);
     toast.success('Magic link kopieret til udklipsholder');
+  };
+
+  const sendWelcomeEmail = async (bookingId: number) => {
+    setSendingEmail(bookingId);
+    try {
+      const response = await fetch(
+        'https://jkmqliztlhmfyejhmuil.supabase.co/functions/v1/send-welcome-email',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: bookingId }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Email sendt til ${data.email}`);
+      } else {
+        toast.error(data.error || 'Kunne ikke sende email');
+      }
+    } catch (error) {
+      toast.error('Fejl ved afsendelse af email');
+    }
+    setSendingEmail(null);
   };
 
   const filteredCustomers = customers.filter(c =>
@@ -274,6 +298,21 @@ const PersonligSide = () => {
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                   </Button>
+                                  {customer.email && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => sendWelcomeEmail(customer.booking_id)}
+                                      disabled={sendingEmail === customer.booking_id}
+                                      title="Send velkomst email"
+                                    >
+                                      {sendingEmail === customer.booking_id ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Mail className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  )}
                                 </>
                               ) : (
                                 <Button
