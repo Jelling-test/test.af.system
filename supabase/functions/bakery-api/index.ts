@@ -24,8 +24,37 @@ Deno.serve(async (req: Request) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'products';
 
+    // GET SETTINGS
+    if ((action === 'settings' || action === 'get-settings') && req.method === 'GET') {
+      const { data: settings } = await supabase
+        .from('bakery_settings')
+        .select('*')
+        .single();
+
+      // Returner default settings hvis ikke fundet
+      const defaultSettings = {
+        order_open_time: '10:00',
+        order_close_time: '22:00',
+        pickup_start_time: '07:00',
+        pickup_end_time: '09:00',
+        is_closed: false,
+        closed_until: null,
+        closed_message_da: 'Bageriet er lukket',
+        closed_message_en: 'Bakery is closed',
+        closed_message_de: 'Bäckerei geschlossen',
+        pickup_location_da: 'Receptionen',
+        pickup_location_en: 'Reception',
+        pickup_location_de: 'Rezeption'
+      };
+
+      return new Response(
+        JSON.stringify({ success: true, settings: settings || defaultSettings }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET PRODUCTS
-    if (action === 'products' && req.method === 'GET') {
+    if ((action === 'products' || action === 'get-products') && req.method === 'GET') {
       const { data: products, error } = await supabase
         .from('bakery_products')
         .select('*')
@@ -34,14 +63,30 @@ Deno.serve(async (req: Request) => {
 
       if (error) throw error;
 
+      // Map felter til hvad gæstesiden forventer
+      const mappedProducts = (products || []).map(p => ({
+        id: p.id,
+        name_da: p.name,
+        name_en: p.name_en || p.name,
+        name_de: p.name_de || p.name,
+        description_da: p.description || '',
+        description_en: p.description_en || p.description || '',
+        description_de: p.description_de || p.description || '',
+        price: p.price,
+        max_per_order: p.max_per_order || 10,
+        image_url: p.image_url,
+        is_active: p.is_available,
+        sort_order: p.sort_order || 0
+      }));
+
       return new Response(
-        JSON.stringify({ success: true, products }),
+        JSON.stringify({ success: true, products: mappedProducts }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // GET ORDERS for a booking
-    if (action === 'orders' && req.method === 'GET') {
+    if ((action === 'orders' || action === 'get-orders') && req.method === 'GET') {
       const bookingId = url.searchParams.get('booking_id');
       if (!bookingId) {
         return new Response(
@@ -65,7 +110,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // CREATE ORDER
-    if (action === 'order' && req.method === 'POST') {
+    if ((action === 'order' || action === 'create-order') && req.method === 'POST') {
       const { booking_id, items, pickup_date, customer_name } = await req.json();
 
       if (!booking_id || !items || items.length === 0 || !pickup_date) {
@@ -114,7 +159,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // CANCEL ORDER
-    if (action === 'cancel' && req.method === 'POST') {
+    if ((action === 'cancel' || action === 'cancel-order') && req.method === 'POST') {
       const { order_id, booking_id } = await req.json();
 
       if (!order_id || !booking_id) {
