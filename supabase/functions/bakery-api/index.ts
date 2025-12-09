@@ -111,7 +111,15 @@ Deno.serve(async (req: Request) => {
 
     // CREATE ORDER
     if ((action === 'order' || action === 'create-order') && req.method === 'POST') {
-      const { booking_id, items, pickup_date, customer_name } = await req.json();
+      const body = await req.json();
+      
+      // Accepter forskellige feltnavne
+      const booking_id = body.booking_id || body.booking_nummer;
+      const customer_name = body.customer_name || body.guest_name;
+      const email = body.email || body.guest_email;
+      const phone = body.phone || body.guest_phone;
+      const items = body.items;
+      const pickup_date = body.pickup_date;
 
       if (!booking_id || !items || items.length === 0 || !pickup_date) {
         return new Response(
@@ -134,10 +142,12 @@ Deno.serve(async (req: Request) => {
         .from('bakery_orders')
         .insert({
           booking_id,
-          customer_name,
-          order_number: orderNumber,
+          booking_type: 'regular',
+          customer_name: customer_name || 'Gæst',
+          email,
+          phone,
           items,
-          total,
+          total_price: total,
           pickup_date,
           status: 'pending'
         })
@@ -228,7 +238,9 @@ Deno.serve(async (req: Request) => {
 
     // CANCEL ORDER
     if ((action === 'cancel' || action === 'cancel-order') && req.method === 'POST') {
-      const { order_id, booking_id } = await req.json();
+      const body = await req.json();
+      const order_id = body.order_id;
+      const booking_id = body.booking_id || body.booking_nummer;
 
       if (!order_id || !booking_id) {
         return new Response(
@@ -239,7 +251,7 @@ Deno.serve(async (req: Request) => {
 
       const { error } = await supabase
         .from('bakery_orders')
-        .update({ status: 'cancelled' })
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
         .eq('id', order_id)
         .eq('booking_id', booking_id);
 
