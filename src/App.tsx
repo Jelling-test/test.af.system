@@ -48,6 +48,7 @@ const AdminManuelTaend = lazy(() => import("./pages/admin/ManuelTaend"));
 const AdminElInfrastruktur = lazy(() => import("./pages/admin/ElInfrastruktur"));
 const AdminPladser = lazy(() => import("./pages/admin/Pladser"));
 const AdminPersonligSide = lazy(() => import("./pages/admin/PersonligSide"));
+const AdminBageri = lazy(() => import("./pages/admin/AdminBageri"));
 const StaffBom = lazy(() => import("./pages/staff/Bom"));
 const RemoteGate = lazy(() => import("./pages/RemoteGate"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -116,6 +117,7 @@ const router = createBrowserRouter(
       <Route path="/admin/el-infrastruktur" element={<AdminElInfrastruktur />} />
       <Route path="/admin/pladser" element={<AdminPladser />} />
       <Route path="/admin/personlig-side" element={<AdminPersonligSide />} />
+      <Route path="/admin/bageri" element={<AdminBageri />} />
       
       {/* Remote Gate Control */}
       <Route path="/bom" element={<RemoteGate />} />
