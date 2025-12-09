@@ -111,6 +111,10 @@ const PersonligSide = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingToken, setGeneratingToken] = useState<number | null>(null);
   const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [editTemplate, setEditTemplate] = useState<EmailTemplate | null>(null);
+  const [editTriggerDays, setEditTriggerDays] = useState<string>("");
+  const [editSubject, setEditSubject] = useState<string>("");
 
   useEffect(() => {
     fetchData();
@@ -229,6 +233,36 @@ const PersonligSide = () => {
     c.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.booking_id?.toString().includes(searchTerm)
   );
+
+  const openEditTemplate = (template: EmailTemplate) => {
+    setEditTemplate(template);
+    setEditTriggerDays(template.trigger_days_before?.toString() || "");
+    setEditSubject(template.subject_da || "");
+  };
+
+  const saveTemplate = async () => {
+    if (!editTemplate) return;
+    
+    try {
+      const updates: any = {
+        subject_da: editSubject,
+        trigger_days_before: editTriggerDays === "" ? null : parseInt(editTriggerDays)
+      };
+
+      const { error } = await supabase
+        .from('email_templates')
+        .update(updates)
+        .eq('id', editTemplate.id);
+
+      if (error) throw error;
+
+      toast.success('Skabelon opdateret');
+      setEditTemplate(null);
+      fetchData();
+    } catch (error) {
+      toast.error('Kunne ikke gemme ændringer');
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -571,10 +605,20 @@ const PersonligSide = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline" title="Vis preview">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="Vis preview"
+                                onClick={() => setPreviewTemplate(template)}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="outline" title="Rediger">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="Rediger"
+                                onClick={() => openEditTemplate(template)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </div>
@@ -650,6 +694,90 @@ const PersonligSide = () => {
           </Tabs>
         </main>
       </div>
+
+      {/* PREVIEW DIALOG */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Preview: {previewTemplate?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {previewTemplate?.description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Emne (DA)</Label>
+              <p className="text-sm p-2 bg-muted rounded">{previewTemplate?.subject_da}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Email Indhold</Label>
+              <div 
+                className="border rounded p-4 bg-white"
+                dangerouslySetInnerHTML={{ __html: previewTemplate?.body_html || '' }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT DIALOG */}
+      <Dialog open={!!editTemplate} onOpenChange={() => setEditTemplate(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Rediger: {editTemplate?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Opdater email skabelon indstillinger
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="triggerDays">Trigger (dage før ankomst)</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  id="triggerDays"
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={editTriggerDays}
+                  onChange={(e) => setEditTriggerDays(e.target.value)}
+                  placeholder="Antal dage"
+                  className="w-32"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {editTriggerDays === "" ? "Manuel afsendelse" : `${editTriggerDays} dage før ankomst`}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Lad feltet være tomt for manuel afsendelse. Sæt til 0 for afsendelse på ankomstdagen.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="subject">Emne (DA)</Label>
+              <Input
+                id="subject"
+                value={editSubject}
+                onChange={(e) => setEditSubject(e.target.value)}
+                placeholder="Email emne"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTemplate(null)}>
+              Annuller
+            </Button>
+            <Button onClick={saveTemplate}>
+              Gem ændringer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 };
