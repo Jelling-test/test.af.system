@@ -104,6 +104,7 @@ const AdminCafe = () => {
   const [orders, setOrders] = useState<CafeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('hours');
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
@@ -111,6 +112,53 @@ const AdminCafe = () => {
   useEffect(() => {
     fetchAll();
   }, []);
+
+  // Billede upload funktion
+  const handleImageUpload = async (file: File, target: 'menu' | 'offer' | 'header') => {
+    setUploading(target);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `cafe-${target}-${Date.now()}.${fileExt}`;
+      const filePath = `cafe/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      // Opdater det rigtige felt baseret på target
+      if (target === 'menu' && editingMenu) {
+        setEditingMenu({ ...editingMenu, image_url: publicUrl });
+      } else if (target === 'offer' && editingOffer) {
+        setEditingOffer({ ...editingOffer, image_url: publicUrl });
+      } else if (target === 'header') {
+        setSettings({ ...settings, header_image: publicUrl });
+      }
+      
+      toast.success('Billede uploadet!');
+    } catch (err) {
+      console.error('Upload fejl:', err);
+      toast.error('Kunne ikke uploade billede');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const triggerFileUpload = (target: 'menu' | 'offer' | 'header') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleImageUpload(file, target);
+    };
+    input.click();
+  };
 
   const fetchAll = async () => {
     try {
@@ -459,6 +507,44 @@ const AdminCafe = () => {
                       <Input type="number" value={editingMenu.price} onChange={e => setEditingMenu({...editingMenu, price: parseFloat(e.target.value) || 0})} />
                     </div>
                   </div>
+                  {/* Billede upload */}
+                  <div>
+                    <Label>Billede</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      {editingMenu.image_url ? (
+                        <div className="relative">
+                          <img src={editingMenu.image_url} alt="" className="w-16 h-16 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={() => setEditingMenu({...editingMenu, image_url: ''})}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 border-2 border-dashed rounded flex items-center justify-center text-gray-400">
+                          <Upload className="h-6 w-6" />
+                        </div>
+                      )}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => triggerFileUpload('menu')}
+                        disabled={uploading === 'menu'}
+                      >
+                        {uploading === 'menu' ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                        Upload billede
+                      </Button>
+                      <Input 
+                        placeholder="eller indsæt URL" 
+                        value={editingMenu.image_url || ''} 
+                        onChange={e => setEditingMenu({...editingMenu, image_url: e.target.value})}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <Button onClick={() => saveMenuItem(editingMenu)}><Check className="h-4 w-4 mr-1" /> Gem</Button>
                     <Button variant="outline" onClick={() => setEditingMenu(null)}><X className="h-4 w-4 mr-1" /> Annuller</Button>
@@ -556,8 +642,46 @@ const AdminCafe = () => {
                       <Input type="datetime-local" value={editingOffer.visible_from || ''} onChange={e => setEditingOffer({...editingOffer, visible_from: e.target.value})} />
                     </div>
                     <div>
-                      <Label>Synlig til</Label>
+                      <Label>Synlig til (deadline)</Label>
                       <Input type="datetime-local" value={editingOffer.visible_to || ''} onChange={e => setEditingOffer({...editingOffer, visible_to: e.target.value})} />
+                    </div>
+                  </div>
+                  {/* Billede upload */}
+                  <div>
+                    <Label>Billede</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      {editingOffer.image_url ? (
+                        <div className="relative">
+                          <img src={editingOffer.image_url} alt="" className="w-20 h-20 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={() => setEditingOffer({...editingOffer, image_url: ''})}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center text-gray-400">
+                          <Upload className="h-6 w-6" />
+                        </div>
+                      )}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => triggerFileUpload('offer')}
+                        disabled={uploading === 'offer'}
+                      >
+                        {uploading === 'offer' ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                        Upload billede
+                      </Button>
+                      <Input 
+                        placeholder="eller indsæt URL" 
+                        value={editingOffer.image_url || ''} 
+                        onChange={e => setEditingOffer({...editingOffer, image_url: e.target.value})}
+                        className="flex-1"
+                      />
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -615,9 +739,43 @@ const AdminCafe = () => {
                   <Label>Kontakttekst (DA)</Label>
                   <Textarea value={settings.contact_text || ''} onChange={e => setSettings({...settings, contact_text: e.target.value})} rows={2} />
                 </div>
+                {/* Header billede med upload */}
                 <div>
-                  <Label>Header billede URL</Label>
-                  <Input value={settings.header_image || ''} onChange={e => setSettings({...settings, header_image: e.target.value})} placeholder="https://..." />
+                  <Label>Header billede</Label>
+                  <div className="flex items-center gap-4 mt-2">
+                    {settings.header_image ? (
+                      <div className="relative">
+                        <img src={settings.header_image} alt="Header" className="w-40 h-24 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={() => setSettings({...settings, header_image: ''})}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-40 h-24 border-2 border-dashed rounded flex items-center justify-center text-gray-400">
+                        <Upload className="h-8 w-8" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => triggerFileUpload('header')}
+                        disabled={uploading === 'header'}
+                      >
+                        {uploading === 'header' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                        Upload header billede
+                      </Button>
+                      <Input 
+                        placeholder="eller indsæt URL" 
+                        value={settings.header_image || ''} 
+                        onChange={e => setSettings({...settings, header_image: e.target.value})}
+                      />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
