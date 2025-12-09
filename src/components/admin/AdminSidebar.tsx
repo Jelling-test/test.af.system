@@ -32,6 +32,7 @@ import {
   Croissant,
   CalendarDays,
   Ticket,
+  Coffee,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,6 +57,7 @@ const AdminSidebar = () => {
     { title: "Events", url: "/admin/events", icon: CalendarDays },
     { title: "Externe Events", url: "/admin/eksterne-events", icon: Ticket },
     { title: "Attraktioner", url: "/admin/attraktioner", icon: MapPin },
+    { title: "Café", url: "/admin/cafe", icon: Coffee },
     { title: "Priser", url: "/admin/priser", icon: DollarSign },
     { title: "Kunder", url: "/admin/kunder", icon: Users },
     { title: "Manuel Tænd", url: "/admin/manuel-taend", icon: Power },
