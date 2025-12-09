@@ -51,6 +51,7 @@ const AdminPersonligSide = lazy(() => import("./pages/admin/PersonligSide"));
 const AdminBageri = lazy(() => import("./pages/admin/AdminBageri"));
 const AdminEvents = lazy(() => import("./pages/admin/AdminEvents"));
 const AdminExternalEvents = lazy(() => import("./pages/admin/AdminExternalEvents"));
+const AdminAttractions = lazy(() => import("./pages/admin/AdminAttractions"));
 const StaffBom = lazy(() => import("./pages/staff/Bom"));
 const RemoteGate = lazy(() => import("./pages/RemoteGate"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -122,6 +123,7 @@ const router = createBrowserRouter(
       <Route path="/admin/bageri" element={<AdminBageri />} />
       <Route path="/admin/events" element={<AdminEvents />} />
       <Route path="/admin/eksterne-events" element={<AdminExternalEvents />} />
+      <Route path="/admin/attraktioner" element={<AdminAttractions />} />
       
       {/* Remote Gate Control */}
       <Route path="/bom" element={<RemoteGate />} />
