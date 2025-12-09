@@ -11,6 +11,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Portal URL - opdater til Vercel app
+const PORTAL_URL = 'https://jelling.vercel.app';
+
 // Generer random alphanumerisk token
 function generateToken(length: number = 32): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -79,7 +82,7 @@ Deno.serve(async (req: Request) => {
 
     // Hvis kunden allerede har token, returner den
     if (customer.magic_token) {
-      const portalUrl = `https://portal.jellingcamping.dk/m/${booking_id}/${customer.magic_token}`;
+      const portalUrl = `${PORTAL_URL}/m/${booking_id}/${customer.magic_token}`;
       return new Response(
         JSON.stringify({
           success: true,
@@ -121,7 +124,7 @@ Deno.serve(async (req: Request) => {
       throw updateError;
     }
 
-    const portalUrl = `https://portal.jellingcamping.dk/m/${booking_id}/${token}`;
+    const portalUrl = `${PORTAL_URL}/m/${booking_id}/${token}`;
 
     return new Response(
       JSON.stringify({

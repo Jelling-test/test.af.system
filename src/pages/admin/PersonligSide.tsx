@@ -148,7 +148,7 @@ const PersonligSide = () => {
   };
 
   const copyMagicLink = (bookingId: number, token: string) => {
-    const link = `https://portal.jellingcamping.dk/m/${bookingId}/${token}`;
+    const link = `https://jelling.vercel.app/m/${bookingId}/${token}`;
     navigator.clipboard.writeText(link);
     toast.success('Magic link kopieret til udklipsholder');
   };
@@ -270,7 +270,7 @@ const PersonligSide = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => window.open(`https://portal.jellingcamping.dk/m/${customer.booking_id}/${customer.magic_token}`, '_blank')}
+                                    onClick={() => window.open(`https://jelling.vercel.app/m/${customer.booking_id}/${customer.magic_token}`, '_blank')}
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                   </Button>
