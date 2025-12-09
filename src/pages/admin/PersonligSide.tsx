@@ -71,9 +71,14 @@ interface PortalInfo {
 interface BakeryProduct {
   id: string;
   name: string;
+  name_en: string | null;
+  name_de: string | null;
+  description: string | null;
   price: number;
   category: string;
+  image_url: string | null;
   is_available: boolean;
+  sort_order: number;
 }
 
 interface EmailTemplate {
@@ -115,6 +120,25 @@ const PersonligSide = () => {
   const [editTemplate, setEditTemplate] = useState<EmailTemplate | null>(null);
   const [editTriggerDays, setEditTriggerDays] = useState<string>("");
   const [editSubject, setEditSubject] = useState<string>("");
+  const [editBodyHtml, setEditBodyHtml] = useState<string>("");
+  
+  // Bageri state
+  const [editProduct, setEditProduct] = useState<BakeryProduct | null>(null);
+  const [newProduct, setNewProduct] = useState(false);
+  const [productName, setProductName] = useState("");
+  const [productNameEn, setProductNameEn] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [productCategory, setProductCategory] = useState("brod");
+  const [productDescription, setProductDescription] = useState("");
+  
+  // Portal Info state
+  const [editInfo, setEditInfo] = useState<PortalInfo | null>(null);
+  const [newInfo, setNewInfo] = useState(false);
+  const [infoTitle, setInfoTitle] = useState("");
+  const [infoTitleEn, setInfoTitleEn] = useState("");
+  const [infoContent, setInfoContent] = useState("");
+  const [infoContentEn, setInfoContentEn] = useState("");
+  const [infoIcon, setInfoIcon] = useState("info");
 
   useEffect(() => {
     fetchData();
@@ -238,6 +262,7 @@ const PersonligSide = () => {
     setEditTemplate(template);
     setEditTriggerDays(template.trigger_days_before?.toString() || "");
     setEditSubject(template.subject_da || "");
+    setEditBodyHtml(template.body_html || "");
   };
 
   const saveTemplate = async () => {
@@ -246,6 +271,7 @@ const PersonligSide = () => {
     try {
       const updates: any = {
         subject_da: editSubject,
+        body_html: editBodyHtml,
         trigger_days_before: editTriggerDays === "" ? null : parseInt(editTriggerDays)
       };
 
@@ -261,6 +287,137 @@ const PersonligSide = () => {
       fetchData();
     } catch (error) {
       toast.error('Kunne ikke gemme ændringer');
+    }
+  };
+
+  // BAGERI FUNKTIONER
+  const openEditProduct = (product: BakeryProduct) => {
+    setEditProduct(product);
+    setNewProduct(false);
+    setProductName(product.name);
+    setProductNameEn(product.name_en || "");
+    setProductPrice(product.price.toString());
+    setProductCategory(product.category);
+    setProductDescription(product.description || "");
+  };
+
+  const openNewProduct = () => {
+    setEditProduct(null);
+    setNewProduct(true);
+    setProductName("");
+    setProductNameEn("");
+    setProductPrice("");
+    setProductCategory("brod");
+    setProductDescription("");
+  };
+
+  const saveProduct = async () => {
+    try {
+      const productData = {
+        name: productName,
+        name_en: productNameEn || null,
+        description: productDescription || null,
+        price: parseFloat(productPrice),
+        category: productCategory,
+        is_available: true,
+        sort_order: bakeryProducts.length + 1
+      };
+
+      if (editProduct) {
+        const { error } = await supabase
+          .from('bakery_products')
+          .update(productData)
+          .eq('id', editProduct.id);
+        if (error) throw error;
+        toast.success('Produkt opdateret');
+      } else {
+        const { error } = await supabase
+          .from('bakery_products')
+          .insert(productData);
+        if (error) throw error;
+        toast.success('Produkt tilføjet');
+      }
+
+      setEditProduct(null);
+      setNewProduct(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Kunne ikke gemme produkt');
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    if (!confirm('Er du sikker på du vil slette dette produkt?')) return;
+    try {
+      const { error } = await supabase.from('bakery_products').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Produkt slettet');
+      fetchData();
+    } catch (error) {
+      toast.error('Kunne ikke slette produkt');
+    }
+  };
+
+  // PORTAL INFO FUNKTIONER
+  const openEditInfo = (info: PortalInfo) => {
+    setEditInfo(info);
+    setNewInfo(false);
+    setInfoTitle(info.title);
+    setInfoContent(info.content);
+    setInfoIcon(info.icon);
+  };
+
+  const openNewInfo = () => {
+    setEditInfo(null);
+    setNewInfo(true);
+    setInfoTitle("");
+    setInfoContent("");
+    setInfoIcon("info");
+  };
+
+  const saveInfo = async () => {
+    try {
+      const infoData = {
+        key: infoTitle.toLowerCase().replace(/\s+/g, '_'),
+        title: infoTitle,
+        content: infoContent,
+        icon: infoIcon,
+        is_active: true,
+        sort_order: portalInfo.length + 1
+      };
+
+      if (editInfo) {
+        const { error } = await supabase
+          .from('portal_info')
+          .update(infoData)
+          .eq('id', editInfo.id);
+        if (error) throw error;
+        toast.success('Information opdateret');
+      } else {
+        const { error } = await supabase
+          .from('portal_info')
+          .insert(infoData);
+        if (error) throw error;
+        toast.success('Information tilføjet');
+      }
+
+      setEditInfo(null);
+      setNewInfo(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Kunne ikke gemme information');
+    }
+  };
+
+  const deleteInfo = async (id: string) => {
+    if (!confirm('Er du sikker på du vil slette denne information?')) return;
+    try {
+      const { error } = await supabase.from('portal_info').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Information slettet');
+      fetchData();
+    } catch (error) {
+      toast.error('Kunne ikke slette information');
     }
   };
 
@@ -434,7 +591,7 @@ const PersonligSide = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex justify-end mb-4">
-                    <Button>
+                    <Button onClick={openNewProduct}>
                       <Plus className="h-4 w-4 mr-2" />
                       Tilføj Produkt
                     </Button>
@@ -483,8 +640,11 @@ const PersonligSide = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
-                                <Button size="sm" variant="outline" title="Rediger pris">
+                                <Button size="sm" variant="outline" title="Rediger" onClick={() => openEditProduct(product)}>
                                   <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-destructive" title="Slet" onClick={() => deleteProduct(product.id)}>
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -508,7 +668,7 @@ const PersonligSide = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex justify-end mb-4">
-                    <Button>
+                    <Button onClick={openNewInfo}>
                       <Plus className="h-4 w-4 mr-2" />
                       Tilføj Information
                     </Button>
@@ -537,10 +697,10 @@ const PersonligSide = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
+                              <Button size="sm" variant="outline" onClick={() => openEditInfo(info)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="outline" className="text-destructive">
+                              <Button size="sm" variant="outline" className="text-destructive" onClick={() => deleteInfo(info.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -777,6 +937,19 @@ const PersonligSide = () => {
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="bodyHtml">Email Indhold (HTML)</Label>
+              <Textarea
+                id="bodyHtml"
+                value={editBodyHtml}
+                onChange={(e) => setEditBodyHtml(e.target.value)}
+                placeholder="<p>Din email tekst her...</p>"
+                className="mt-1 font-mono text-sm min-h-[200px]"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Variabler: {"{{guest_name}}"}, {"{{booking_id}}"}, {"{{arrival_date}}"}, {"{{departure_date}}"}, {"{{magic_link}}"}, {"{{qr_code}}"}
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTemplate(null)}>
@@ -785,6 +958,105 @@ const PersonligSide = () => {
             <Button onClick={saveTemplate}>
               Gem ændringer
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BAGERI PRODUKT DIALOG */}
+      <Dialog open={newProduct || !!editProduct} onOpenChange={() => { setNewProduct(false); setEditProduct(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editProduct ? 'Rediger Produkt' : 'Tilføj Produkt'}</DialogTitle>
+            <DialogDescription>Udfyld produktinformation</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="productName">Navn (DA)</Label>
+                <Input id="productName" value={productName} onChange={(e) => setProductName(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="productNameEn">Navn (EN)</Label>
+                <Input id="productNameEn" value={productNameEn} onChange={(e) => setProductNameEn(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="productPrice">Pris (kr)</Label>
+                <Input id="productPrice" type="number" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="productCategory">Kategori</Label>
+                <select
+                  id="productCategory"
+                  value={productCategory}
+                  onChange={(e) => setProductCategory(e.target.value)}
+                  className="w-full h-10 px-3 border rounded-md"
+                >
+                  <option value="brod">Brød</option>
+                  <option value="wienerbroed">Wienerbrød</option>
+                  <option value="kage">Kager</option>
+                  <option value="mejeri">Mejeri</option>
+                  <option value="drikke">Drikkevarer</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="productDescription">Beskrivelse</Label>
+              <Textarea id="productDescription" value={productDescription} onChange={(e) => setProductDescription(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNewProduct(false); setEditProduct(null); }}>Annuller</Button>
+            <Button onClick={saveProduct}>Gem</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PORTAL INFO DIALOG */}
+      <Dialog open={newInfo || !!editInfo} onOpenChange={() => { setNewInfo(false); setEditInfo(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editInfo ? 'Rediger Information' : 'Tilføj Information'}</DialogTitle>
+            <DialogDescription>Udfyld praktisk information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="infoTitle">Titel</Label>
+              <Input id="infoTitle" value={infoTitle} onChange={(e) => setInfoTitle(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="infoContent">Indhold</Label>
+              <Textarea 
+                id="infoContent" 
+                value={infoContent} 
+                onChange={(e) => setInfoContent(e.target.value)}
+                placeholder="Brug \n for linjeskift"
+                className="min-h-[100px]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="infoIcon">Ikon</Label>
+              <select
+                id="infoIcon"
+                value={infoIcon}
+                onChange={(e) => setInfoIcon(e.target.value)}
+                className="w-full h-10 px-3 border rounded-md"
+              >
+                <option value="wifi">WiFi</option>
+                <option value="clock">Åbningstider</option>
+                <option value="phone">Telefon</option>
+                <option value="alert-triangle">Nødsituation</option>
+                <option value="scroll-text">Regler</option>
+                <option value="building-2">Faciliteter</option>
+                <option value="log-out">Check-ud</option>
+                <option value="info">Info</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNewInfo(false); setEditInfo(null); }}>Annuller</Button>
+            <Button onClick={saveInfo}>Gem</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

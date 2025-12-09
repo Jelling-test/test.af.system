@@ -112,15 +112,29 @@ Deno.serve(async (req: Request) => {
     // Byg magic link
     const magicLink = `${PORTAL_URL}/m/${booking_id}/${magicToken}`;
 
+    // Generer QR kode URL (bruger gratis QR API)
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(magicLink)}`;
+    const qrCodeHtml = `<img src="${qrCodeUrl}" alt="QR Code til gæsteportal" style="width:200px;height:200px;" />`;
+
+    // Bestem gæstenavn baseret på sprog
+    const guestName = `${customer.first_name || 'Gæst'} ${customer.last_name || ''}`.trim();
+
     // Erstat placeholders i template
     let htmlBody = template.body_html
       .replace(/\{\{FIRST_NAME\}\}/g, customer.first_name || 'Gæst')
       .replace(/\{\{LAST_NAME\}\}/g, customer.last_name || '')
+      .replace(/\{\{guest_name\}\}/g, guestName)
       .replace(/\{\{ARRIVAL_DATE\}\}/g, customer.arrival_date || '')
+      .replace(/\{\{arrival_date\}\}/g, customer.arrival_date || '')
       .replace(/\{\{DEPARTURE_DATE\}\}/g, customer.departure_date || '')
+      .replace(/\{\{departure_date\}\}/g, customer.departure_date || '')
       .replace(/\{\{SPOT_NUMBER\}\}/g, customer.spot_number || '')
       .replace(/\{\{BOOKING_ID\}\}/g, booking_id.toString())
-      .replace(/\{\{MAGIC_LINK\}\}/g, magicLink);
+      .replace(/\{\{booking_id\}\}/g, booking_id.toString())
+      .replace(/\{\{MAGIC_LINK\}\}/g, magicLink)
+      .replace(/\{\{magic_link\}\}/g, magicLink)
+      .replace(/\{\{QR_CODE\}\}/g, qrCodeHtml)
+      .replace(/\{\{qr_code\}\}/g, qrCodeHtml);
 
     // Send email via send-email function
     const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
