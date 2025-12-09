@@ -39,7 +39,13 @@ import {
   Croissant,
   Info,
   Search,
+  FileText,
+  Clock,
+  Send,
+  Eye,
+  Power,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 
 interface Customer {
@@ -70,11 +76,37 @@ interface BakeryProduct {
   is_available: boolean;
 }
 
+interface EmailTemplate {
+  id: string;
+  name: string;
+  description: string;
+  subject_da: string;
+  subject_en: string | null;
+  subject_de: string | null;
+  body_html: string;
+  trigger_days_before: number | null;
+  is_active: boolean;
+  priority: number;
+}
+
+interface EmailLog {
+  id: string;
+  recipient_email: string;
+  recipient_name: string;
+  subject: string;
+  template_name: string;
+  booking_id: number;
+  status: string;
+  sent_at: string;
+}
+
 const PersonligSide = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [portalInfo, setPortalInfo] = useState<PortalInfo[]>([]);
   const [bakeryProducts, setBakeryProducts] = useState<BakeryProduct[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingToken, setGeneratingToken] = useState<number | null>(null);
@@ -115,6 +147,21 @@ const PersonligSide = () => {
         .select('*')
         .order('sort_order', { ascending: true });
       setBakeryProducts(products || []);
+
+      // Hent email templates
+      const { data: templates } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('priority', { ascending: true });
+      setEmailTemplates(templates || []);
+
+      // Hent email logs (sidste 50)
+      const { data: logs } = await supabase
+        .from('email_logs')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(50);
+      setEmailLogs(logs || []);
 
     } catch (error) {
       console.error('Fejl ved hentning af data:', error);
@@ -214,6 +261,10 @@ const PersonligSide = () => {
               <TabsTrigger value="info" className="flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Portal Info
+              </TabsTrigger>
+              <TabsTrigger value="emails" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Email Skabeloner
               </TabsTrigger>
             </TabsList>
 
@@ -454,6 +505,145 @@ const PersonligSide = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* EMAIL SKABELONER TAB */}
+            <TabsContent value="emails" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email Skabeloner</CardTitle>
+                  <CardDescription>
+                    Administrer email skabeloner og automatisk afsendelse
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Navn</TableHead>
+                        <TableHead>Beskrivelse</TableHead>
+                        <TableHead>Trigger</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Handlinger</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emailTemplates.map((template) => (
+                        <TableRow key={template.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              {template.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-xs truncate">
+                            {template.description}
+                          </TableCell>
+                          <TableCell>
+                            {template.trigger_days_before !== null ? (
+                              <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                <Clock className="h-3 w-3" />
+                                {template.trigger_days_before} dage før
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Manuel</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={template.is_active}
+                                onCheckedChange={async (checked) => {
+                                  await supabase
+                                    .from('email_templates')
+                                    .update({ is_active: checked })
+                                    .eq('id', template.id);
+                                  fetchData();
+                                  toast.success(checked ? 'Template aktiveret' : 'Template deaktiveret');
+                                }}
+                              />
+                              <span className={template.is_active ? 'text-green-600' : 'text-muted-foreground'}>
+                                {template.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" title="Vis preview">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" title="Rediger">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  {emailTemplates.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Ingen email skabeloner endnu</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* EMAIL LOG */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Send className="h-5 w-5" />
+                    Sendte Emails
+                  </CardTitle>
+                  <CardDescription>
+                    Log over sendte emails (sidste 50)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {emailLogs.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Ingen emails sendt endnu</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Tidspunkt</TableHead>
+                          <TableHead>Modtager</TableHead>
+                          <TableHead>Emne</TableHead>
+                          <TableHead>Booking</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {emailLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {new Date(log.sent_at).toLocaleString('da-DK')}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{log.recipient_name}</div>
+                                <div className="text-sm text-muted-foreground">{log.recipient_email}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{log.subject}</TableCell>
+                            <TableCell>{log.booking_id}</TableCell>
+                            <TableCell>
+                              <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                                {log.status === 'sent' ? 'Sendt' : log.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
