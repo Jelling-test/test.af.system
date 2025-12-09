@@ -132,6 +132,7 @@ const PersonligSide = () => {
   const [productPrice, setProductPrice] = useState("");
   const [productCategory, setProductCategory] = useState("brod");
   const [productDescription, setProductDescription] = useState("");
+  const [productImageUrl, setProductImageUrl] = useState("");
   
   // Portal Info state
   const [editInfo, setEditInfo] = useState<PortalInfo | null>(null);
@@ -303,6 +304,7 @@ const PersonligSide = () => {
     setProductPrice(product.price.toString());
     setProductCategory(product.category);
     setProductDescription(product.description || "");
+    setProductImageUrl(product.image_url || "");
   };
 
   const openNewProduct = () => {
@@ -313,6 +315,7 @@ const PersonligSide = () => {
     setProductPrice("");
     setProductCategory("brod");
     setProductDescription("");
+    setProductImageUrl("");
   };
 
   const saveProduct = async () => {
@@ -323,6 +326,7 @@ const PersonligSide = () => {
         description: productDescription || null,
         price: parseFloat(productPrice),
         category: productCategory,
+        image_url: productImageUrl || null,
         is_available: true,
         sort_order: bakeryProducts.length + 1
       };
@@ -942,17 +946,28 @@ const PersonligSide = () => {
               />
             </div>
             <div>
-              <Label htmlFor="bodyHtml">Email Indhold (HTML)</Label>
+              <Label htmlFor="bodyHtml">Email Indhold</Label>
               <Textarea
                 id="bodyHtml"
                 value={editBodyHtml}
                 onChange={(e) => setEditBodyHtml(e.target.value)}
-                placeholder="<p>Din email tekst her...</p>"
-                className="mt-1 font-mono text-sm min-h-[200px]"
+                placeholder="Skriv din email tekst her...
+
+Brug disse variabler i teksten:
+- {{guest_name}} = Gæstens navn
+- {{arrival_date}} = Ankomstdato
+- {{departure_date}} = Afrejsedato
+- {{booking_id}} = Booking nummer"
+                className="mt-1 min-h-[250px]"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Variabler: {"{{guest_name}}"}, {"{{booking_id}}"}, {"{{arrival_date}}"}, {"{{departure_date}}"}, {"{{magic_link}}"}, {"{{qr_code}}"}
-              </p>
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm">
+                <p className="font-medium text-blue-800 mb-1">💡 Tip til formatering:</p>
+                <ul className="text-blue-700 text-xs space-y-1">
+                  <li>• Brug <code className="bg-blue-100 px-1 rounded">{"{{guest_name}}"}</code> for gæstens navn</li>
+                  <li>• Brug <code className="bg-blue-100 px-1 rounded">{"{{arrival_date}}"}</code> og <code className="bg-blue-100 px-1 rounded">{"{{departure_date}}"}</code> for datoer</li>
+                  <li>• Link og QR-kode tilføjes automatisk i "Portal-kassen" nedenfor</li>
+                </ul>
+              </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div>
@@ -1020,6 +1035,28 @@ const PersonligSide = () => {
             <div>
               <Label htmlFor="productDescription">Beskrivelse</Label>
               <Textarea id="productDescription" value={productDescription} onChange={(e) => setProductDescription(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="productImageUrl">Billede URL</Label>
+              <Input 
+                id="productImageUrl" 
+                value={productImageUrl} 
+                onChange={(e) => setProductImageUrl(e.target.value)} 
+                placeholder="https://example.com/billede.jpg"
+              />
+              {productImageUrl && (
+                <div className="mt-2">
+                  <img 
+                    src={productImageUrl} 
+                    alt="Preview" 
+                    className="w-24 h-24 object-cover rounded border"
+                    onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Indsæt URL til et billede af produktet
+              </p>
             </div>
           </div>
           <DialogFooter>

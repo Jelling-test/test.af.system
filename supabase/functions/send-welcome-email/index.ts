@@ -138,8 +138,8 @@ Deno.serve(async (req: Request) => {
       </div>
     `;
 
-    // Erstat placeholders i template
-    let htmlBody = template.body_html
+    // Erstat placeholders i template body
+    let bodyContent = template.body_html
       .replace(/\{\{FIRST_NAME\}\}/g, customer.first_name || 'Gæst')
       .replace(/\{\{LAST_NAME\}\}/g, customer.last_name || '')
       .replace(/\{\{guest_name\}\}/g, guestName)
@@ -154,6 +154,41 @@ Deno.serve(async (req: Request) => {
       .replace(/\{\{magic_link\}\}/g, magicLink)
       .replace(/\{\{QR_CODE\}\}/g, qrCodeHtml)
       .replace(/\{\{qr_code\}\}/g, qrCodeHtml);
+
+    // Konverter simpel tekst til HTML hvis ikke allerede HTML
+    const isHtml = bodyContent.trim().startsWith('<') || bodyContent.includes('<p>') || bodyContent.includes('<div>');
+    
+    let htmlBody: string;
+    if (isHtml) {
+      htmlBody = bodyContent;
+    } else {
+      // Wrap i pæn email template
+      const formattedContent = bodyContent
+        .split('\n\n').map(p => `<p style="margin: 0 0 15px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+      
+      htmlBody = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: #2563eb; color: white; padding: 25px; text-align: center; border-radius: 8px 8px 0 0;">
+      <h1 style="margin: 0; font-size: 24px;">🏕️ Jelling Camping</h1>
+    </div>
+    <div style="background: white; padding: 30px; border: 1px solid #e2e8f0;">
+      ${formattedContent}
+    </div>
+    <div style="background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-radius: 0 0 8px 8px;">
+      <p style="margin: 0;">Jelling Camping | Mølvangvej 7 | 7300 Jelling</p>
+      <p style="margin: 5px 0 0 0;">Tlf: 75 87 13 44 | info@jellingcamping.dk</p>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
 
     // Tilføj portal kasse til bunden hvis aktiveret
     if (template.include_portal_box !== false) {
