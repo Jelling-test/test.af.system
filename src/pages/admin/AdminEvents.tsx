@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, CalendarDays, Clock, MapPin, Loader2, X, Check, Upload, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, CalendarDays, Clock, MapPin, Loader2, X, Check, Upload, Image, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CampEvent {
@@ -48,6 +49,7 @@ const emptyEvent: Omit<CampEvent, 'id'> = {
 };
 
 const AdminEvents = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<CampEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -223,7 +225,12 @@ const AdminEvents = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Events på pladsen</h1>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/dashboard')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-800">Events på pladsen</h1>
+          </div>
           <Button onClick={() => { setEditingEvent({ ...emptyEvent }); setIsCreating(true); }} className="gap-2">
             <Plus className="h-4 w-4" />
             Nyt event
