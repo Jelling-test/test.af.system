@@ -133,6 +133,7 @@ const PersonligSide = () => {
   const [productCategory, setProductCategory] = useState("brod");
   const [productDescription, setProductDescription] = useState("");
   const [productImageUrl, setProductImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Portal Info state
   const [editInfo, setEditInfo] = useState<PortalInfo | null>(null);
@@ -363,6 +364,42 @@ const PersonligSide = () => {
       fetchData();
     } catch (error) {
       toast.error('Kunne ikke slette produkt');
+    }
+  };
+
+  // Upload produkt billede
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      toast.info('Uploader billede...');
+
+      // Upload til Supabase Storage
+      const fileName = `bakery-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from('bakery-products')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Upload fejl:', uploadError);
+        toast.error('Kunne ikke uploade billede');
+        return;
+      }
+
+      // Hent public URL
+      const { data: urlData } = supabase.storage
+        .from('bakery-products')
+        .getPublicUrl(fileName);
+
+      setProductImageUrl(urlData.publicUrl);
+      toast.success('Billede uploadet!');
+    } catch (error) {
+      console.error('Upload fejl:', error);
+      toast.error('Kunne ikke uploade billede');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -1037,26 +1074,43 @@ Brug disse variabler i teksten:
               <Textarea id="productDescription" value={productDescription} onChange={(e) => setProductDescription(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="productImageUrl">Billede URL</Label>
-              <Input 
-                id="productImageUrl" 
-                value={productImageUrl} 
-                onChange={(e) => setProductImageUrl(e.target.value)} 
-                placeholder="https://example.com/billede.jpg"
-              />
-              {productImageUrl && (
-                <div className="mt-2">
-                  <img 
-                    src={productImageUrl} 
-                    alt="Preview" 
-                    className="w-24 h-24 object-cover rounded border"
-                    onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+              <Label>Produktbillede</Label>
+              <div className="mt-2 flex items-start gap-4">
+                {productImageUrl ? (
+                  <div className="relative">
+                    <img 
+                      src={productImageUrl} 
+                      alt="Preview" 
+                      className="w-24 h-24 object-cover rounded border"
+                    />
+                    <Button 
+                      type="button"
+                      size="sm" 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                      onClick={() => setProductImageUrl("")}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 border-2 border-dashed rounded flex items-center justify-center text-muted-foreground">
+                    Intet billede
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input 
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="cursor-pointer"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {uploadingImage ? 'Uploader...' : 'Vælg et billede fra din computer'}
+                  </p>
                 </div>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Indsæt URL til et billede af produktet
-              </p>
+              </div>
             </div>
           </div>
           <DialogFooter>
