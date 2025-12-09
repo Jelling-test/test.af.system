@@ -318,7 +318,10 @@ const AdminCafe = () => {
             name_de: offer.name_de || null,
             description: offer.description || null,
             price: offer.price,
-            is_active: false,
+            image_url: offer.image_url || null,
+            visible_from: offer.visible_from || null,
+            visible_to: offer.visible_to || null,
+            is_active: offer.is_active,
             sort_order: offers.length + 1
           });
         if (error) throw error;
@@ -683,6 +686,16 @@ const AdminCafe = () => {
                         className="flex-1"
                       />
                     </div>
+                  </div>
+                  {/* Aktiv switch */}
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <Switch 
+                      checked={editingOffer.is_active} 
+                      onCheckedChange={(checked) => setEditingOffer({...editingOffer, is_active: checked})}
+                    />
+                    <Label className="font-medium">
+                      {editingOffer.is_active ? '✅ Aktiv - vises på kundesiden' : '⏸️ Inaktiv - skjult fra kunder'}
+                    </Label>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => saveOffer(editingOffer)}><Check className="h-4 w-4 mr-1" /> Gem</Button>
