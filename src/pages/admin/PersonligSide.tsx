@@ -464,17 +464,27 @@ const PersonligSide = () => {
                             <TableCell>{product.category}</TableCell>
                             <TableCell>{product.price} kr</TableCell>
                             <TableCell>
-                              <Badge variant={product.is_available ? "default" : "secondary"}>
-                                {product.is_available ? "Tilgængelig" : "Udsolgt"}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={product.is_available}
+                                  onCheckedChange={async (checked) => {
+                                    await supabase
+                                      .from('bakery_products')
+                                      .update({ is_available: checked })
+                                      .eq('id', product.id);
+                                    fetchData();
+                                    toast.success(checked ? 'Produkt tilgængeligt' : 'Produkt udsolgt');
+                                  }}
+                                />
+                                <span className={product.is_available ? 'text-green-600' : 'text-muted-foreground'}>
+                                  {product.is_available ? 'Tilgængelig' : 'Udsolgt'}
+                                </span>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
-                                <Button size="sm" variant="outline">
+                                <Button size="sm" variant="outline" title="Rediger pris">
                                   <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
