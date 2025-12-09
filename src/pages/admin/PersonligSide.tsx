@@ -44,6 +44,11 @@ import {
   Send,
   Eye,
   Power,
+  ShoppingCart,
+  CheckCircle,
+  XCircle,
+  Package,
+  Printer,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
@@ -106,6 +111,17 @@ interface EmailLog {
   sent_at: string;
 }
 
+interface BakeryOrder {
+  id: string;
+  booking_id: number;
+  customer_name: string;
+  items: { name: string; quantity: number; price: number }[];
+  total_price: number;
+  pickup_date: string;
+  status: 'pending' | 'confirmed' | 'ready' | 'collected' | 'cancelled';
+  created_at: string;
+}
+
 const PersonligSide = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -113,6 +129,8 @@ const PersonligSide = () => {
   const [bakeryProducts, setBakeryProducts] = useState<BakeryProduct[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
+  const [bakeryOrders, setBakeryOrders] = useState<BakeryOrder[]>([]);
+  const [ordersDateFilter, setOrdersDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingToken, setGeneratingToken] = useState<number | null>(null);
@@ -254,6 +272,90 @@ const PersonligSide = () => {
       toast.error('Fejl ved afsendelse af email');
     }
     setSendingEmail(null);
+  };
+
+  // Hent bageri bestillinger
+  const fetchBakeryOrders = async (date?: string) => {
+    try {
+      const filterDate = date || ordersDateFilter;
+      const response = await fetch(
+        `https://jkmqliztlhmfyejhmuil.supabase.co/functions/v1/bakery-api?action=admin-orders&date=${filterDate}`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setBakeryOrders(data.orders || []);
+      }
+    } catch (error) {
+      console.error('Fejl ved hentning af bestillinger:', error);
+    }
+  };
+
+  // Opdater bestilling status
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const response = await fetch(
+        'https://jkmqliztlhmfyejhmuil.supabase.co/functions/v1/bakery-api?action=update-status',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId, status }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message);
+        fetchBakeryOrders();
+      } else {
+        toast.error(data.error || 'Kunne ikke opdatere status');
+      }
+    } catch (error) {
+      toast.error('Fejl ved opdatering af status');
+    }
+  };
+
+  // Print bestilling
+  const printOrder = (order: BakeryOrder) => {
+    const printContent = `
+      <html>
+      <head><title>Bageri Bestilling</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { font-size: 24px; }
+        .items { margin: 20px 0; }
+        .item { padding: 5px 0; border-bottom: 1px dashed #ccc; }
+        .total { font-size: 20px; font-weight: bold; margin-top: 20px; }
+      </style>
+      </head>
+      <body>
+        <h1>Bageri Bestilling #${order.id.slice(0, 8)}</h1>
+        <p><strong>Kunde:</strong> ${order.customer_name}</p>
+        <p><strong>Booking:</strong> ${order.booking_id}</p>
+        <p><strong>Afhentning:</strong> ${new Date(order.pickup_date).toLocaleDateString('da-DK')}</p>
+        <div class="items">
+          ${order.items.map(item => `<div class="item">${item.quantity}x ${item.name} - ${item.quantity * item.price} kr</div>`).join('')}
+        </div>
+        <div class="total">Total: ${order.total_price} kr</div>
+      </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  // Status badge styling
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, { variant: string; label: string }> = {
+      pending: { variant: 'secondary', label: 'Afventer' },
+      confirmed: { variant: 'default', label: 'Bekræftet' },
+      ready: { variant: 'default', label: 'Klar' },
+      collected: { variant: 'outline', label: 'Afhentet' },
+      cancelled: { variant: 'destructive', label: 'Annulleret' },
+    };
+    return styles[status] || { variant: 'secondary', label: status };
   };
 
   const filteredCustomers = customers.filter(c =>
@@ -494,6 +596,10 @@ const PersonligSide = () => {
                 <Croissant className="h-4 w-4" />
                 Bageri
               </TabsTrigger>
+              <TabsTrigger value="orders" className="flex items-center gap-2" onClick={() => fetchBakeryOrders()}>
+                <ShoppingCart className="h-4 w-4" />
+                Bestillinger
+              </TabsTrigger>
               <TabsTrigger value="info" className="flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Portal Info
@@ -697,6 +803,107 @@ const PersonligSide = () => {
                         ))}
                       </TableBody>
                     </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* BESTILLINGER TAB */}
+            <TabsContent value="orders" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Bageri Bestillinger
+                  </CardTitle>
+                  <CardDescription>
+                    Se og administrer indkomne bageri bestillinger
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="order-date" className="text-sm font-medium">Dato:</label>
+                      <Input
+                        id="order-date"
+                        type="date"
+                        value={ordersDateFilter}
+                        onChange={(e) => {
+                          setOrdersDateFilter(e.target.value);
+                          fetchBakeryOrders(e.target.value);
+                        }}
+                        className="w-auto"
+                      />
+                    </div>
+                    <Button variant="outline" onClick={() => fetchBakeryOrders()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Opdater
+                    </Button>
+                  </div>
+
+                  {bakeryOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Ingen bestillinger for denne dato</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bakeryOrders.map((order) => (
+                        <Card key={order.id} className="border">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-mono font-bold">#{order.id.slice(0, 8)}</span>
+                                  <Badge variant={getStatusBadge(order.status).variant as any}>
+                                    {getStatusBadge(order.status).label}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm"><strong>Kunde:</strong> {order.customer_name}</p>
+                                <p className="text-sm"><strong>Booking:</strong> {order.booking_id}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Bestilt: {new Date(order.created_at).toLocaleString('da-DK')}
+                                </p>
+                                <div className="mt-2 space-y-1">
+                                  {order.items.map((item, idx) => (
+                                    <p key={idx} className="text-sm">
+                                      {item.quantity}x {item.name} - {item.quantity * item.price} kr
+                                    </p>
+                                  ))}
+                                </div>
+                                <p className="font-bold mt-2 text-lg text-green-600">
+                                  Total: {order.total_price} kr
+                                </p>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {order.status === 'pending' && (
+                                  <Button size="sm" variant="default" onClick={() => updateOrderStatus(order.id, 'ready')}>
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Klar
+                                  </Button>
+                                )}
+                                {order.status === 'ready' && (
+                                  <Button size="sm" variant="default" onClick={() => updateOrderStatus(order.id, 'collected')}>
+                                    <Package className="h-4 w-4 mr-1" />
+                                    Afhentet
+                                  </Button>
+                                )}
+                                {order.status !== 'cancelled' && order.status !== 'collected' && (
+                                  <Button size="sm" variant="destructive" onClick={() => updateOrderStatus(order.id, 'cancelled')}>
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Annuller
+                                  </Button>
+                                )}
+                                <Button size="sm" variant="outline" onClick={() => printOrder(order)}>
+                                  <Printer className="h-4 w-4 mr-1" />
+                                  Print
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>

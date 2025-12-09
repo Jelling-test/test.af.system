@@ -158,6 +158,74 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // GET ALL ORDERS (Admin)
+    if (action === 'admin-orders' && req.method === 'GET') {
+      const dateFilter = url.searchParams.get('date'); // Optional: filter by pickup_date
+      const statusFilter = url.searchParams.get('status'); // Optional: filter by status
+      
+      let query = supabase
+        .from('bakery_orders')
+        .select('*')
+        .order('pickup_date', { ascending: true })
+        .order('created_at', { ascending: false });
+      
+      if (dateFilter) {
+        query = query.eq('pickup_date', dateFilter);
+      }
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data: orders, error } = await query;
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify({ success: true, orders: orders || [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // UPDATE ORDER STATUS (Admin)
+    if (action === 'update-status' && req.method === 'POST') {
+      const { order_id, status } = await req.json();
+
+      if (!order_id || !status) {
+        return new Response(
+          JSON.stringify({ error: 'order_id and status required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const validStatuses = ['pending', 'confirmed', 'ready', 'collected', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid status' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const updateData: any = { status };
+      if (status === 'collected') {
+        updateData.collected_at = new Date().toISOString();
+      }
+      if (status === 'cancelled') {
+        updateData.cancelled_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('bakery_orders')
+        .update(updateData)
+        .eq('id', order_id);
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify({ success: true, message: `Status opdateret til ${status}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // CANCEL ORDER
     if ((action === 'cancel' || action === 'cancel-order') && req.method === 'POST') {
       const { order_id, booking_id } = await req.json();
