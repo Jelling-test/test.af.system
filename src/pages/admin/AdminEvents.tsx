@@ -79,20 +79,60 @@ const AdminEvents = () => {
   const handleSave = async () => {
     if (!editingEvent) return;
     
+    // Validering af påkrævede felter
+    if (!editingEvent.title?.trim()) {
+      toast.error('Titel er påkrævet');
+      return;
+    }
+    if (!editingEvent.description?.trim()) {
+      toast.error('Beskrivelse er påkrævet');
+      return;
+    }
+    if (!editingEvent.event_date) {
+      toast.error('Dato er påkrævet');
+      return;
+    }
+    if (!editingEvent.event_time) {
+      toast.error('Starttid er påkrævet');
+      return;
+    }
+    if (!editingEvent.location?.trim()) {
+      toast.error('Lokation er påkrævet');
+      return;
+    }
+    
+    // Forbered data - fjern tomme strenge for nullable felter
+    const dataToSave = {
+      title: editingEvent.title,
+      title_en: editingEvent.title_en || null,
+      title_de: editingEvent.title_de || null,
+      description: editingEvent.description,
+      description_en: editingEvent.description_en || null,
+      description_de: editingEvent.description_de || null,
+      event_date: editingEvent.event_date,
+      event_time: editingEvent.event_time,
+      end_time: editingEvent.end_time || null,
+      location: editingEvent.location,
+      target_group: editingEvent.target_group || 'all',
+      registration_place: editingEvent.registration_place || 'none',
+      max_participants: editingEvent.max_participants || null,
+      is_active: editingEvent.is_active ?? true,
+      image_url: editingEvent.image_url || null,
+    };
+    
     setSaving(true);
     try {
       if (isCreating) {
         const { error } = await supabase
           .from('camp_events')
-          .insert([editingEvent]);
+          .insert([dataToSave]);
         if (error) throw error;
         toast.success('Event oprettet');
       } else {
-        const { id, ...updateData } = editingEvent;
         const { error } = await supabase
           .from('camp_events')
-          .update(updateData)
-          .eq('id', id);
+          .update(dataToSave)
+          .eq('id', editingEvent.id);
         if (error) throw error;
         toast.success('Event opdateret');
       }
