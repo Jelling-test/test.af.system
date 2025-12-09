@@ -53,6 +53,26 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // SAVE SETTINGS (Admin)
+    if (action === 'save-settings' && req.method === 'POST') {
+      const newSettings = await req.json();
+      
+      const { error } = await supabase
+        .from('bakery_settings')
+        .upsert({
+          id: 'default',
+          ...newSettings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Indstillinger gemt' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET PRODUCTS
     if ((action === 'products' || action === 'get-products') && req.method === 'GET') {
       const { data: products, error } = await supabase
