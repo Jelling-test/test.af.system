@@ -119,6 +119,25 @@ Deno.serve(async (req: Request) => {
     // Bestem gæstenavn baseret på sprog
     const guestName = `${customer.first_name || 'Gæst'} ${customer.last_name || ''}`.trim();
 
+    // Portal kasse - tilføjes til bunden af email hvis include_portal_box er true
+    const portalBoxHtml = `
+      <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border: 2px solid #28a745; border-radius: 10px; text-align: center;">
+        <h3 style="color: #28a745; margin: 0 0 15px 0;">🏕️ Din personlige side hos Jelling Camping</h3>
+        <p style="margin: 0 0 15px 0; color: #333;">Tryk på linket eller scan QR-koden for at tilgå din side:</p>
+        <p style="margin: 0 0 20px 0;">
+          <a href="${magicLink}" style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            Åbn din gæsteside →
+          </a>
+        </p>
+        <div style="margin-top: 15px;">
+          <img src="${qrCodeUrl}" alt="QR Code" style="width: 150px; height: 150px;" />
+        </div>
+        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+          Scan med din telefon for nem adgang
+        </p>
+      </div>
+    `;
+
     // Erstat placeholders i template
     let htmlBody = template.body_html
       .replace(/\{\{FIRST_NAME\}\}/g, customer.first_name || 'Gæst')
@@ -135,6 +154,11 @@ Deno.serve(async (req: Request) => {
       .replace(/\{\{magic_link\}\}/g, magicLink)
       .replace(/\{\{QR_CODE\}\}/g, qrCodeHtml)
       .replace(/\{\{qr_code\}\}/g, qrCodeHtml);
+
+    // Tilføj portal kasse til bunden hvis aktiveret
+    if (template.include_portal_box !== false) {
+      htmlBody += portalBoxHtml;
+    }
 
     // Send email via send-email function
     const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {

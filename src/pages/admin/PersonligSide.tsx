@@ -91,6 +91,7 @@ interface EmailTemplate {
   body_html: string;
   trigger_days_before: number | null;
   is_active: boolean;
+  include_portal_box: boolean;
   priority: number;
 }
 
@@ -121,6 +122,7 @@ const PersonligSide = () => {
   const [editTriggerDays, setEditTriggerDays] = useState<string>("");
   const [editSubject, setEditSubject] = useState<string>("");
   const [editBodyHtml, setEditBodyHtml] = useState<string>("");
+  const [editIncludePortalBox, setEditIncludePortalBox] = useState<boolean>(true);
   
   // Bageri state
   const [editProduct, setEditProduct] = useState<BakeryProduct | null>(null);
@@ -263,6 +265,7 @@ const PersonligSide = () => {
     setEditTriggerDays(template.trigger_days_before?.toString() || "");
     setEditSubject(template.subject_da || "");
     setEditBodyHtml(template.body_html || "");
+    setEditIncludePortalBox(template.include_portal_box !== false);
   };
 
   const saveTemplate = async () => {
@@ -272,7 +275,8 @@ const PersonligSide = () => {
       const updates: any = {
         subject_da: editSubject,
         body_html: editBodyHtml,
-        trigger_days_before: editTriggerDays === "" ? null : parseInt(editTriggerDays)
+        trigger_days_before: editTriggerDays === "" ? null : parseInt(editTriggerDays),
+        include_portal_box: editIncludePortalBox
       };
 
       const { error } = await supabase
@@ -949,6 +953,18 @@ const PersonligSide = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 Variabler: {"{{guest_name}}"}, {"{{booking_id}}"}, {"{{arrival_date}}"}, {"{{departure_date}}"}, {"{{magic_link}}"}, {"{{qr_code}}"}
               </p>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div>
+                <Label className="text-sm font-medium">Inkluder Portal-kasse</Label>
+                <p className="text-xs text-muted-foreground">
+                  Tilføj kasse med magic link og QR-kode i bunden af emailen
+                </p>
+              </div>
+              <Switch
+                checked={editIncludePortalBox}
+                onCheckedChange={setEditIncludePortalBox}
+              />
             </div>
           </div>
           <DialogFooter>
