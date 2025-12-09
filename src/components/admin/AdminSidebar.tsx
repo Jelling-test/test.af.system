@@ -28,6 +28,7 @@ import {
   Power,
   CircuitBoard,
   MapPin,
+  Smartphone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ const AdminSidebar = () => {
     { title: "El-infrastruktur", url: "/admin/el-infrastruktur", icon: CircuitBoard },
     { title: "Pladser", url: "/admin/pladser", icon: MapPin },
     { title: "Hytter", url: "/admin/hytter", icon: Home },
+    { title: "Personlig Side", url: "/admin/personlig-side", icon: Smartphone },
     { title: "Priser", url: "/admin/priser", icon: DollarSign },
     { title: "Kunder", url: "/admin/kunder", icon: Users },
     { title: "Manuel Tænd", url: "/admin/manuel-taend", icon: Power },
