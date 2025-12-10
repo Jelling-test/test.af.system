@@ -55,6 +55,7 @@ const AdminAttractions = lazy(() => import("./pages/admin/AdminAttractions"));
 const AdminCafe = lazy(() => import("./pages/admin/AdminCafe"));
 const AdminPractical = lazy(() => import("./pages/admin/AdminPractical"));
 const AdminPool = lazy(() => import("./pages/admin/AdminPool"));
+const AdminPlayground = lazy(() => import("./pages/admin/AdminPlayground"));
 const StaffBom = lazy(() => import("./pages/staff/Bom"));
 const RemoteGate = lazy(() => import("./pages/RemoteGate"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -130,6 +131,7 @@ const router = createBrowserRouter(
       <Route path="/admin/cafe" element={<AdminCafe />} />
       <Route path="/admin/praktisk" element={<AdminPractical />} />
       <Route path="/admin/friluftsbad" element={<AdminPool />} />
+      <Route path="/admin/legeplads" element={<AdminPlayground />} />
       
       {/* Remote Gate Control */}
       <Route path="/bom" element={<RemoteGate />} />

@@ -35,6 +35,7 @@ import {
   Coffee,
   Info,
   Waves,
+  TreePine,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ const AdminSidebar = () => {
     { title: "Café", url: "/admin/cafe", icon: Coffee },
     { title: "Praktisk Info", url: "/admin/praktisk", icon: Info },
     { title: "Friluftsbad", url: "/admin/friluftsbad", icon: Waves },
+    { title: "Legeplads", url: "/admin/legeplads", icon: TreePine },
     { title: "Priser", url: "/admin/priser", icon: DollarSign },
     { title: "Kunder", url: "/admin/kunder", icon: Users },
     { title: "Manuel Tænd", url: "/admin/manuel-taend", icon: Power },
