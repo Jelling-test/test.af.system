@@ -36,6 +36,7 @@ import {
   Info,
   Waves,
   TreePine,
+  Image,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,6 +57,7 @@ const AdminSidebar = () => {
     { title: "Pladser", url: "/admin/pladser", icon: MapPin },
     { title: "Hytter", url: "/admin/hytter", icon: Home },
     { title: "Personlig Side", url: "/admin/personlig-side", icon: Smartphone },
+    { title: "Dashboard Billeder", url: "/admin/dashboard-billeder", icon: Image },
     { title: "Bageri", url: "/admin/bageri", icon: Croissant },
     { title: "Events", url: "/admin/events", icon: CalendarDays },
     { title: "Externe Events", url: "/admin/eksterne-events", icon: Ticket },
