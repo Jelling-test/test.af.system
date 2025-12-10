@@ -64,6 +64,7 @@ const AdminSidebar = () => {
     { title: "Praktisk Info", url: "/admin/praktisk", icon: Info },
     { title: "Friluftsbad", url: "/admin/friluftsbad", icon: Waves },
     { title: "Legeplads", url: "/admin/legeplads", icon: TreePine },
+    { title: "Hytter - Info", url: "/admin/hytter-info", icon: Home },
     { title: "Priser", url: "/admin/priser", icon: DollarSign },
     { title: "Kunder", url: "/admin/kunder", icon: Users },
     { title: "Manuel Tænd", url: "/admin/manuel-taend", icon: Power },
