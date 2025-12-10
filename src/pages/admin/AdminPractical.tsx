@@ -11,7 +11,7 @@ import {
   TreePine, Train, Settings, Upload, GripVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 // Interfaces
 interface PracticalInfo {
