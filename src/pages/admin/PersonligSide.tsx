@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import {
   Table,
   TableBody,
@@ -948,25 +950,35 @@ const PersonligSide = () => {
             </div>
             <div>
               <Label htmlFor="bodyHtml">Email Indhold</Label>
-              <Textarea
-                id="bodyHtml"
-                value={editBodyHtml}
-                onChange={(e) => setEditBodyHtml(e.target.value)}
-                placeholder="Skriv din email tekst her...
-
-Brug disse variabler i teksten:
-- {{guest_name}} = Gæstens navn
-- {{arrival_date}} = Ankomstdato
-- {{departure_date}} = Afrejsedato
-- {{booking_id}} = Booking nummer"
-                className="mt-1 min-h-[250px]"
-              />
+              <p className="text-xs text-muted-foreground mb-2">
+                Kopier tekst fra Word, Canva eller andet program - formatering og billeder bevares
+              </p>
+              <div className="border rounded-md">
+                <ReactQuill
+                  theme="snow"
+                  value={editBodyHtml}
+                  onChange={setEditBodyHtml}
+                  style={{ minHeight: '300px' }}
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline'],
+                      [{ 'color': [] }, { 'background': [] }],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      [{ 'align': [] }],
+                      ['link', 'image'],
+                      ['clean']
+                    ],
+                  }}
+                />
+              </div>
               <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm">
-                <p className="font-medium text-blue-800 mb-1">💡 Tip til formatering:</p>
+                <p className="font-medium text-blue-800 mb-1">💡 Variabler du kan bruge:</p>
                 <ul className="text-blue-700 text-xs space-y-1">
-                  <li>• Brug <code className="bg-blue-100 px-1 rounded">{"{{guest_name}}"}</code> for gæstens navn</li>
-                  <li>• Brug <code className="bg-blue-100 px-1 rounded">{"{{arrival_date}}"}</code> og <code className="bg-blue-100 px-1 rounded">{"{{departure_date}}"}</code> for datoer</li>
-                  <li>• Link og QR-kode tilføjes automatisk i "Portal-kassen" nedenfor</li>
+                  <li>• <code className="bg-blue-100 px-1 rounded">{"{{guest_name}}"}</code> = Gæstens navn</li>
+                  <li>• <code className="bg-blue-100 px-1 rounded">{"{{arrival_date}}"}</code> = Ankomstdato</li>
+                  <li>• <code className="bg-blue-100 px-1 rounded">{"{{departure_date}}"}</code> = Afrejsedato</li>
+                  <li>• Link og QR-kode tilføjes automatisk via "Portal-kassen"</li>
                 </ul>
               </div>
             </div>
