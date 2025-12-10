@@ -595,10 +595,6 @@ const PersonligSide = () => {
                 <Link className="h-4 w-4" />
                 Magic Links
               </TabsTrigger>
-                            <TabsTrigger value="info" className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Portal Info
-              </TabsTrigger>
               <TabsTrigger value="emails" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 Email Skabeloner
@@ -716,63 +712,6 @@ const PersonligSide = () => {
                                   Generer
                                 </Button>
                               )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            
-            {/* PORTAL INFO TAB */}
-            <TabsContent value="info" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Praktisk Information</CardTitle>
-                  <CardDescription>
-                    Information der vises på gæsteportalen
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end mb-4">
-                    <Button onClick={openNewInfo}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Tilføj Information
-                    </Button>
-                  </div>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Titel</TableHead>
-                        <TableHead>Indhold</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Handlinger</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {portalInfo.map((info) => (
-                        <TableRow key={info.id}>
-                          <TableCell className="font-medium">{info.title}</TableCell>
-                          <TableCell className="max-w-xs truncate text-muted-foreground">
-                            {info.content.replace(/\\n/g, ' ')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={info.is_active ? "default" : "secondary"}>
-                              {info.is_active ? "Aktiv" : "Skjult"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" onClick={() => openEditInfo(info)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="text-destructive" onClick={() => deleteInfo(info.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1145,54 +1084,7 @@ Brug disse variabler i teksten:
         </DialogContent>
       </Dialog>
 
-      {/* PORTAL INFO DIALOG */}
-      <Dialog open={newInfo || !!editInfo} onOpenChange={() => { setNewInfo(false); setEditInfo(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editInfo ? 'Rediger Information' : 'Tilføj Information'}</DialogTitle>
-            <DialogDescription>Udfyld praktisk information</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="infoTitle">Titel</Label>
-              <Input id="infoTitle" value={infoTitle} onChange={(e) => setInfoTitle(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="infoContent">Indhold</Label>
-              <Textarea 
-                id="infoContent" 
-                value={infoContent} 
-                onChange={(e) => setInfoContent(e.target.value)}
-                placeholder="Brug \n for linjeskift"
-                className="min-h-[100px]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="infoIcon">Ikon</Label>
-              <select
-                id="infoIcon"
-                value={infoIcon}
-                onChange={(e) => setInfoIcon(e.target.value)}
-                className="w-full h-10 px-3 border rounded-md"
-              >
-                <option value="wifi">WiFi</option>
-                <option value="clock">Åbningstider</option>
-                <option value="phone">Telefon</option>
-                <option value="alert-triangle">Nødsituation</option>
-                <option value="scroll-text">Regler</option>
-                <option value="building-2">Faciliteter</option>
-                <option value="log-out">Check-ud</option>
-                <option value="info">Info</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setNewInfo(false); setEditInfo(null); }}>Annuller</Button>
-            <Button onClick={saveInfo}>Gem</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </SidebarProvider>
+      </SidebarProvider>
   );
 };
 
