@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, Save, Plus, Trash2, Pencil, Check, X, Wifi, Phone, MapPin,
-  TreePine, Train, Settings, Upload, GripVertical
+  Train, Settings, Upload, GripVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,18 +45,6 @@ interface NearbyService {
   icon: string;
   distance: string;
   hours: string;
-  sort_order: number;
-  is_active: boolean;
-}
-
-interface Attraction {
-  id?: string;
-  name: string;
-  name_en?: string;
-  name_de?: string;
-  icon: string;
-  distance: string;
-  is_highlight: boolean;
   sort_order: number;
   is_active: boolean;
 }
@@ -99,14 +87,12 @@ const AdminPractical = () => {
   const [info, setInfo] = useState<PracticalInfo | null>(null);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [services, setServices] = useState<NearbyService[]>([]);
-  const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [transport, setTransport] = useState<Transport[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   
   // Editing states
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [editingService, setEditingService] = useState<NearbyService | null>(null);
-  const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
   const [editingTransport, setEditingTransport] = useState<Transport | null>(null);
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
 
@@ -117,11 +103,10 @@ const AdminPractical = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [infoRes, contactsRes, servicesRes, attractionsRes, transportRes, facilitiesRes] = await Promise.all([
+      const [infoRes, contactsRes, servicesRes, transportRes, facilitiesRes] = await Promise.all([
         supabase.from('practical_info').select('*').single(),
         supabase.from('practical_emergency_contacts').select('*').order('sort_order'),
         supabase.from('practical_nearby_services').select('*').order('sort_order'),
-        supabase.from('practical_attractions').select('*').order('sort_order'),
         supabase.from('practical_transport').select('*').order('sort_order'),
         supabase.from('practical_facilities').select('*').order('sort_order'),
       ]);
@@ -129,7 +114,6 @@ const AdminPractical = () => {
       if (infoRes.data) setInfo(infoRes.data);
       if (contactsRes.data) setContacts(contactsRes.data);
       if (servicesRes.data) setServices(servicesRes.data);
-      if (attractionsRes.data) setAttractions(attractionsRes.data);
       if (transportRes.data) setTransport(transportRes.data);
       if (facilitiesRes.data) setFacilities(facilitiesRes.data);
     } catch (error) {
@@ -256,11 +240,10 @@ const AdminPractical = () => {
 
       <div className="max-w-5xl mx-auto p-4 space-y-6">
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general"><Settings className="h-4 w-4 mr-1" />Generelt</TabsTrigger>
             <TabsTrigger value="contacts"><Phone className="h-4 w-4 mr-1" />Kontakter</TabsTrigger>
             <TabsTrigger value="nearby"><MapPin className="h-4 w-4 mr-1" />Nærheden</TabsTrigger>
-            <TabsTrigger value="attractions"><TreePine className="h-4 w-4 mr-1" />Attraktioner</TabsTrigger>
             <TabsTrigger value="transport"><Train className="h-4 w-4 mr-1" />Transport</TabsTrigger>
             <TabsTrigger value="facilities">Faciliteter</TabsTrigger>
           </TabsList>
@@ -492,68 +475,6 @@ const AdminPractical = () => {
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => setEditingService(service)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => deleteItem('practical_nearby_services', service.id!)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-
-          {/* ATTRAKTIONER TAB */}
-          <TabsContent value="attractions" className="space-y-4">
-            <Button onClick={() => setEditingAttraction({ name: '', icon: 'Landmark', distance: '', is_highlight: false, sort_order: attractions.length + 1, is_active: true })}>
-              <Plus className="h-4 w-4 mr-2" />Tilføj attraktion
-            </Button>
-
-            {editingAttraction && (
-              <Card className="border-primary">
-                <CardContent className="p-4 space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label>Navn</Label>
-                      <Input value={editingAttraction.name} onChange={e => setEditingAttraction({...editingAttraction, name: e.target.value})} />
-                    </div>
-                    <div>
-                      <Label>Ikon</Label>
-                      <select className="w-full border rounded-md p-2" value={editingAttraction.icon} onChange={e => setEditingAttraction({...editingAttraction, icon: e.target.value})}>
-                        {ICON_OPTIONS.map(icon => <option key={icon} value={icon}>{icon}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>Afstand</Label>
-                      <Input value={editingAttraction.distance} onChange={e => setEditingAttraction({...editingAttraction, distance: e.target.value})} />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Switch checked={editingAttraction.is_highlight} onCheckedChange={v => setEditingAttraction({...editingAttraction, is_highlight: v})} />
-                      <Label>Fremhævet (gul markering)</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch checked={editingAttraction.is_active} onCheckedChange={v => setEditingAttraction({...editingAttraction, is_active: v})} />
-                      <Label>Aktiv</Label>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => saveItem('practical_attractions', editingAttraction, setEditingAttraction)}><Check className="h-4 w-4 mr-1" />Gem</Button>
-                    <Button variant="outline" onClick={() => setEditingAttraction(null)}><X className="h-4 w-4 mr-1" />Annuller</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {attractions.map(attr => (
-              <Card key={attr.id} className={`${!attr.is_active ? 'opacity-50' : ''} ${attr.is_highlight ? 'border-amber-500 bg-amber-50' : ''}`}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center text-xs ${attr.is_highlight ? 'bg-amber-200' : 'bg-muted'}`}>{attr.icon}</div>
-                    <div>
-                      <p className="font-medium">{attr.name}</p>
-                      <p className="text-sm text-muted-foreground">{attr.distance}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditingAttraction(attr)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteItem('practical_attractions', attr.id!)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                   </div>
                 </CardContent>
               </Card>
