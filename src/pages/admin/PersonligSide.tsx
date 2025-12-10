@@ -108,7 +108,7 @@ interface EmailLog {
   template_name: string;
   booking_id: number;
   status: string;
-  sent_at: string;
+  created_at: string;
 }
 
 interface BakeryOrder {
@@ -210,7 +210,7 @@ const PersonligSide = () => {
       const { data: logs } = await supabase
         .from('email_logs')
         .select('*')
-        .order('sent_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50);
       setEmailLogs(logs || []);
 
@@ -847,7 +847,7 @@ const PersonligSide = () => {
                         {emailLogs.map((log) => (
                           <TableRow key={log.id}>
                             <TableCell className="text-sm text-muted-foreground">
-                              {new Date(log.sent_at).toLocaleString('da-DK')}
+                              {new Date(log.created_at).toLocaleString('da-DK')}
                             </TableCell>
                             <TableCell>
                               <div>
