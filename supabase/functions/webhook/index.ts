@@ -781,6 +781,81 @@ Deno.serve(async (req) => {
         }
       }
 
+      // ==================== KØRENDE CAMPIST: Energy supplemt → Dagspakke ====================
+      // Logik: Kun kørende campister (ikke sæson, ikke hytte), kun ved check-in
+      // Energy supplemt fra Sirvoy = quantity × 10 enheder
+      if (!isCabinBooking && !isSeasonalCustomer && checkedIn) {
+        const energyItem = payload.additionalItems?.find((item: any) => 
+          item.description?.toLowerCase().includes('energy')
+        );
+
+        if (energyItem && energyItem.quantity > 0) {
+          const enheder = energyItem.quantity * 10;
+          
+          // Tjek om pakke allerede findes (duplikat-beskyttelse)
+          const { data: existingEnergyPackage } = await supabaseClient
+            .from('plugin_data')
+            .select('id')
+            .eq('module', 'pakker')
+            .filter('data->>booking_nummer', 'eq', bookingId.toString())
+            .filter('data->>pakke_kategori', 'eq', 'sirvoy_energy')
+            .maybeSingle();
+
+          if (!existingEnergyPackage) {
+            // Hent kundens måler (hvis tildelt)
+            const { data: customer } = await supabaseClient
+              .from('regular_customers')
+              .select('meter_id')
+              .eq('booking_id', bookingId)
+              .maybeSingle();
+
+            let startEnergy = 0;
+            if (customer?.meter_id) {
+              const { data: meterReading } = await supabaseClient
+                .from('meter_readings')
+                .select('energy')
+                .eq('meter_id', customer.meter_id)
+                .order('time', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              startEnergy = meterReading?.energy || 0;
+            }
+
+            // Opret dagspakke
+            const { error: packageError } = await supabaseClient
+              .from('plugin_data')
+              .insert({
+                organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                module: 'pakker',
+                ref_id: bookingId.toString(),
+                key: `pakke_sirvoy_energy_${bookingId}_${Date.now()}`,
+                data: {
+                  booking_nummer: bookingId,
+                  type_id: 'sirvoy-energy',
+                  pakke_navn: `Dagspakke ${enheder} enheder (Sirvoy)`,
+                  pakke_kategori: 'sirvoy_energy',
+                  pakke_type: 'dags',
+                  enheder: enheder,
+                  pakke_start_energy: startEnergy,
+                  status: 'aktiv',
+                  betaling_metode: 'sirvoy',
+                  kunde_type: 'kørende',
+                  sirvoy_quantity: energyItem.quantity,
+                  sirvoy_price: energyItem.itemTotal
+                }
+              });
+
+            if (packageError) {
+              console.error('Fejl ved oprettelse af Sirvoy energy pakke:', packageError);
+            } else {
+              console.log(`✅ Sirvoy Energy pakke OPRETTET: ${enheder} enheder (${energyItem.quantity} stk) for booking ${bookingId}`);
+            }
+          } else {
+            console.log(`Sirvoy Energy pakke eksisterer allerede for booking ${bookingId} - ignorerer duplikat`);
+          }
+        }
+      }
+
       // ==================== HYTTE: Prepaid pakke + Auto-tænd ====================
       // VIGTIGT: Kun opret prepaid pakke ved CHECK-IN for at undgå problemer med fremtidige/annullerede bookinger
       if (isCabinBooking && cabinMeterId && checkedIn) {
