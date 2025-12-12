@@ -26,7 +26,7 @@ const GuestGuide = () => {
     {
       icon: Zap,
       title: "Strøm aktiveres",
-      description: "Din strøm aktiveres automatisk efter betaling via Home Assistant.",
+      description: "Din strøm aktiveres automatisk efter betaling.",
     },
     {
       icon: BarChart,
@@ -103,7 +103,7 @@ const GuestGuide = () => {
               <AccordionItem value="item-3">
                 <AccordionTrigger>Hvad sker der hvis jeg løber tør for strøm?</AccordionTrigger>
                 <AccordionContent>
-                  Når du løber tør for strøm, vil din forsyning blive afbrudt automatisk via Home Assistant.
+                  Når du løber tør for strøm, vil din forsyning blive afbrudt automatisk.
                   Du kan købe en ny pakke med det samme fra dashboardet, og strømmen aktiveres igen.
                 </AccordionContent>
               </AccordionItem>

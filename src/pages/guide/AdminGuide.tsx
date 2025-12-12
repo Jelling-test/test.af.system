@@ -94,16 +94,14 @@ const AdminGuide = () => {
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
-                <AccordionTrigger>Home Assistant integration</AccordionTrigger>
+                <AccordionTrigger>Måler integration (MQTT)</AccordionTrigger>
                 <AccordionContent className="space-y-3">
-                  <p>For at integrere med Home Assistant:</p>
+                  <p>Målere kommunikerer via MQTT:</p>
                   <ol className="list-decimal pl-5 space-y-2">
-                    <li>Generer en langtids-adgangstoken i Home Assistant</li>
-                    <li>Gå til Admin → Indstillinger → Home Assistant</li>
-                    <li>Indtast HA URL (f.eks. http://homeassistant.local:8123)</li>
-                    <li>Indtast token (gemmes sikkert i Lovable Cloud)</li>
-                    <li>Klik "Test forbindelse" for at verificere</li>
-                    <li>Konfigurer strømmålere med korrekte entity IDs</li>
+                    <li>Målere sender data til MQTT broker</li>
+                    <li>Systemet modtager målerdata automatisk</li>
+                    <li>Tænd/sluk kommandoer sendes via MQTT</li>
+                    <li>Historik gemmes i Supabase database</li>
                   </ol>
                 </AccordionContent>
               </AccordionItem>
@@ -129,15 +127,15 @@ const AdminGuide = () => {
                 <AccordionContent className="space-y-3">
                   <p>For at tilføje eller opdatere målere:</p>
                   <ol className="list-decimal pl-5 space-y-2">
-                    <li>Sørg for at måler er registreret i Home Assistant</li>
+                    <li>Sørg for at måler er tilsluttet og online</li>
                     <li>Gå til Admin → Målere</li>
                     <li>Klik "Tilføj måler"</li>
-                    <li>Indtast pladsnummer og måler entity ID</li>
+                    <li>Indtast pladsnummer og måler-ID</li>
                     <li>Test kommunikationen</li>
                     <li>Aktivér måleren</li>
                   </ol>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    Entity ID skal matche præcist med navnet i Home Assistant (f.eks. sensor.power_meter_123).
+                    Måler-ID skal matche præcist med målerens konfigurerede navn.
                   </p>
                 </AccordionContent>
               </AccordionItem>
@@ -182,7 +180,7 @@ const AdminGuide = () => {
                     <li>Brug kundesøgning til at finde gæstens booking hurtigt</li>
                     <li>Tjek historik for tidligere problemer</li>
                     <li>Verificer målerdata matcher gæstens oplevelse</li>
-                    <li>Genaktiver strøm manuelt hvis nødvendigt via Home Assistant</li>
+                    <li>Genaktiver strøm manuelt hvis nødvendigt via admin panel</li>
                     <li>Dokumenter problemer i system notater</li>
                   </ul>
                 </AccordionContent>
@@ -214,7 +212,7 @@ const AdminGuide = () => {
               <ul className="space-y-2">
                 <li className="flex gap-2">
                   <span className="text-red-600">•</span>
-                  <span>Del ALDRIG Stripe secret keys eller HA tokens</span>
+                  <span>Del ALDRIG Stripe secret keys eller API tokens</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-600">•</span>
@@ -226,7 +224,7 @@ const AdminGuide = () => {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-600">•</span>
-                  <span>Aktiver 2FA på alle kritiske konti (Stripe, Lovable, HA)</span>
+                  <span>Aktiver 2FA på alle kritiske konti (Stripe, Supabase)</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-600">•</span>
@@ -248,7 +246,7 @@ const AdminGuide = () => {
                 <AccordionContent>
                   <ol className="list-decimal pl-5 space-y-2">
                     <li>Verificer at betalingen er registreret i Stripe</li>
-                    <li>Tjek at Home Assistant forbindelse er aktiv</li>
+                    <li>Tjek at MQTT forbindelse er aktiv</li>
                     <li>Se om måler-ID matcher booking</li>
                     <li>Prøv at aktivere strøm manuelt via toggle-power edge function</li>
                     <li>Tjek edge function logs for fejl</li>
@@ -259,10 +257,10 @@ const AdminGuide = () => {
                 <AccordionTrigger>Målere viser ikke korrekte data</AccordionTrigger>
                 <AccordionContent>
                   <ol className="list-decimal pl-5 space-y-2">
-                    <li>Verificer at entity ID er korrekt i Home Assistant</li>
+                    <li>Verificer at måler-ID er korrekt</li>
                     <li>Tjek at måler enheden (kWh) er konfigureret rigtigt</li>
                     <li>Se om der er netværksproblemer med måleren</li>
-                    <li>Restart Home Assistant integration hvis nødvendigt</li>
+                    <li>Genstart måleren hvis nødvendigt</li>
                     <li>Kontakt leverandør hvis hardware defekt</li>
                   </ol>
                 </AccordionContent>

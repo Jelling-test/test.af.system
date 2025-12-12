@@ -95,7 +95,7 @@ const StaffGuide = () => {
                     <li>Tjek om gæsten har en aktiv strømpakke</li>
                     <li>Se om de har enheder tilbage</li>
                     <li>Verificer at måler-ID matcher deres plads</li>
-                    <li>Prøv at genaktivere via Home Assistant integration</li>
+                    <li>Prøv at genaktivere via admin panel</li>
                     <li>Kontakt admin hvis problemet fortsætter</li>
                   </ol>
                 </AccordionContent>
@@ -138,7 +138,7 @@ const StaffGuide = () => {
             <ul className="space-y-2">
               <li className="flex gap-2">
                 <span className="text-yellow-600">•</span>
-                <span>Tekniske problemer med Home Assistant integration</span>
+                <span>Tekniske problemer med måler-integration</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-yellow-600">•</span>

@@ -709,7 +709,7 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
           <DialogHeader>
             <DialogTitle>Tilføj ny måler</DialogTitle>
             <DialogDescription>
-              Indtast navn og vælg Home Assistant entity for den nye måler
+              Indtast navn og måler-ID for den nye måler
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -899,7 +899,7 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
           <DialogHeader>
             <DialogTitle>Nye målere fundet</DialogTitle>
             <DialogDescription>
-              Følgende målere blev fundet i Home Assistant
+              Følgende målere blev fundet
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
