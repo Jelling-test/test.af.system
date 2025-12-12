@@ -172,18 +172,22 @@ const PersonligSide = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Hent kunder med magic tokens
+      // Hent aktive/kommende kunder (departure_date >= i dag)
+      const today = new Date().toISOString().split('T')[0];
+      
       const { data: regular } = await supabase
         .from('regular_customers')
         .select('booking_id, first_name, last_name, email, magic_token, arrival_date, departure_date')
+        .gte('departure_date', today)
         .order('booking_id', { ascending: false })
-        .limit(50);
+        .limit(1000);
 
       const { data: seasonal } = await supabase
         .from('seasonal_customers')
         .select('booking_id, first_name, last_name, email, magic_token, arrival_date, departure_date')
+        .gte('departure_date', today)
         .order('booking_id', { ascending: false })
-        .limit(50);
+        .limit(1000);
 
       setCustomers([...(regular || []), ...(seasonal || [])]);
 

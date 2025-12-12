@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
     const departureDate = payload.departureDate;
     const checkedIn = payload.bookingIsCheckedIn || false;
     const checkedOut = payload.bookingIsCheckedOut || false;
+    const isCancelled = payload.cancelled === true || payload.event === 'cancelled';
     const numberOfPersons = payload.totalAdults || 0;
     // Udtræk ALLE pladser fra booking (flere pladser per kunde)
     const spotNumbers = payload.rooms?.map((r: any) => r.RoomName).filter(Boolean) || [];
@@ -103,8 +104,8 @@ Deno.serve(async (req) => {
       console.log(`HYTTE BOOKING identificeret: ${cabin.name} (nummer ${cabin.cabin_number}), måler: ${cabinMeterId}`);
     }
 
-    if (checkedOut) {
-      console.log(`Kunde ${bookingId} er checked out - sletter`);
+    if (checkedOut || isCancelled) {
+      console.log(`Kunde ${bookingId} er ${isCancelled ? 'annulleret' : 'checked out'} - sletter`);
 
       // Find og slet kunde
       let customer = null;
