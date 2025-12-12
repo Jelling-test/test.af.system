@@ -61,6 +61,87 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // SEARCH AVAILABLE METERS
+    // Samme logik som VaelgMaaler.tsx i main systemet
+    if (action === 'search-meters') {
+      const query = url.searchParams.get('query') || '';
+      
+      if (query.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, meters: [] }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 1. Hent målere der matcher søgning og er markeret ledige
+      const { data: meters, error } = await supabase
+        .from('power_meters')
+        .select('id, meter_number, spot_number, is_online')
+        .eq('is_available', true)
+        .ilike('meter_number', `%${query}%`)
+        .limit(20);
+
+      if (error) throw error;
+
+      // 2. HYTTE-FILTER: Hent alle målere der er låst til hytter
+      const { data: cabinMeters } = await supabase
+        .from('cabins')
+        .select('meter_id')
+        .not('meter_id', 'is', null);
+
+      const cabinMeterIds = new Set(cabinMeters?.map((c: any) => c.meter_id) || []);
+
+      // 3. Hent alle tildelte målere fra kunder (checked ind)
+      const { data: seasonalCustomers } = await supabase
+        .from('seasonal_customers')
+        .select('meter_id')
+        .eq('checked_in', true)
+        .not('meter_id', 'is', null);
+
+      const { data: regularCustomers } = await supabase
+        .from('regular_customers')
+        .select('meter_id')
+        .eq('checked_in', true)
+        .not('meter_id', 'is', null);
+
+      // 4. Hent ekstra målere (tilknyttet bookinger)
+      const { data: extraMeters } = await supabase
+        .from('booking_extra_meters')
+        .select('meter_id');
+
+      // 5. Opret set af tildelte måler IDs
+      const assignedMeterIds = new Set([
+        ...(seasonalCustomers?.map((c: any) => c.meter_id) || []),
+        ...(regularCustomers?.map((c: any) => c.meter_id) || []),
+        ...(extraMeters?.map((m: any) => m.meter_id) || []),
+      ]);
+
+      // 6. Filtrer: kun online, ikke tildelt, ikke hytte-måler
+      const availableMeters = (meters || [])
+        .filter((meter: any) => {
+          // Skip hvis måler er tildelt en kunde
+          if (assignedMeterIds.has(meter.meter_number)) {
+            return false;
+          }
+          // Skip hvis måler er låst til en hytte
+          if (cabinMeterIds.has(meter.meter_number)) {
+            return false;
+          }
+          // Kun inkluder online målere
+          return meter.is_online === true;
+        })
+        .map((meter: any) => ({
+          id: meter.id,
+          meter_number: meter.meter_number,
+          spot_number: meter.spot_number,
+        }));
+
+      return new Response(
+        JSON.stringify({ success: true, meters: availableMeters }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET ALL (events + info)
     if (action === 'all') {
       const today = new Date().toISOString().split('T')[0];
