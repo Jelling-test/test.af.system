@@ -711,52 +711,66 @@ Deno.serve(async (req) => {
       // ==================== AUTO-SEND VELKOMST EMAIL ====================
       // Send email straks hvis ankomst er inden for X dage (variabel fra admin)
       // Kun hvis kunde har email og ikke allerede har modtaget welcome_email
+      // VIGTIGT: Tjek FØRST om magic_token allerede eksisterer (robust mod race conditions)
       if (email && !checkedIn && !checkedOut) {
-        // Hent trigger_days_before fra welcome_email template
-        const { data: emailTemplate } = await supabaseClient
-          .from('email_templates')
-          .select('trigger_days_before')
-          .eq('name', 'welcome_email')
-          .eq('is_active', true)
+        // Tjek om kunden allerede har magic_token (= email proces er startet)
+        const customerTable = isSeasonalCustomer ? 'seasonal_customers' : 'regular_customers';
+        const { data: customerWithToken } = await supabaseClient
+          .from(customerTable)
+          .select('magic_token')
+          .eq('booking_id', bookingId)
           .maybeSingle();
 
-        if (emailTemplate?.trigger_days_before !== null) {
-          const triggerDays = emailTemplate.trigger_days_before;
-          const today = new Date(getDanishTime());
-          const arrival = new Date(arrivalDate);
-          const daysUntilArrival = Math.ceil((arrival.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        // Hvis magic_token allerede eksisterer, er email allerede sendt/under afsendelse
+        if (customerWithToken?.magic_token) {
+          console.log(`Magic token eksisterer allerede for booking ${bookingId} - skipper email`);
+        } else {
+          // Hent trigger_days_before fra welcome_email template
+          const { data: emailTemplate } = await supabaseClient
+            .from('email_templates')
+            .select('trigger_days_before')
+            .eq('name', 'welcome_email')
+            .eq('is_active', true)
+            .maybeSingle();
 
-          // Send email hvis ankomst er inden for trigger_days_before dage
-          if (daysUntilArrival <= triggerDays && daysUntilArrival >= 0) {
-            // Tjek om email allerede er sendt
-            const { data: existingEmailLog } = await supabaseClient
-              .from('email_logs')
-              .select('id')
-              .eq('booking_id', bookingId)
-              .eq('template_name', 'welcome_email')
-              .maybeSingle();
+          if (emailTemplate?.trigger_days_before !== null) {
+            const triggerDays = emailTemplate.trigger_days_before;
+            const today = new Date(getDanishTime());
+            const arrival = new Date(arrivalDate);
+            const daysUntilArrival = Math.ceil((arrival.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-            if (!existingEmailLog) {
-              // Send welcome email via Edge Function
-              try {
-                const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-                const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ booking_id: bookingId })
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                  console.log(`✅ Velkomst email AUTO-SENDT til ${email} (ankomst om ${daysUntilArrival} dage, trigger: ${triggerDays} dage)`);
-                } else {
-                  console.error(`Fejl ved auto-send af velkomst email:`, result.error);
+            // Send email hvis ankomst er inden for trigger_days_before dage
+            if (daysUntilArrival <= triggerDays && daysUntilArrival >= 0) {
+              // Dobbelttjek: email_logs (backup check)
+              const { data: existingEmailLog } = await supabaseClient
+                .from('email_logs')
+                .select('id')
+                .eq('booking_id', bookingId)
+                .eq('template_name', 'welcome_email')
+                .maybeSingle();
+
+              if (!existingEmailLog) {
+                // Send welcome email via Edge Function
+                try {
+                  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+                  const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId })
+                  });
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                    console.log(`✅ Velkomst email AUTO-SENDT til ${email} (ankomst om ${daysUntilArrival} dage, trigger: ${triggerDays} dage)`);
+                  } else {
+                    console.error(`Fejl ved auto-send af velkomst email:`, result.error);
+                  }
+                } catch (emailError) {
+                  console.error(`Fejl ved kald af send-welcome-email:`, emailError);
                 }
-              } catch (emailError) {
-                console.error(`Fejl ved kald af send-welcome-email:`, emailError);
+              } else {
+                console.log(`Velkomst email allerede sendt til booking ${bookingId} (fundet i email_logs)`);
               }
-            } else {
-              console.log(`Velkomst email allerede sendt til booking ${bookingId}`);
             }
           }
         }
@@ -847,12 +861,13 @@ Deno.serve(async (req) => {
           const enheder = energyItem.quantity * 10;
           
           // Tjek om pakke allerede findes (duplikat-beskyttelse)
+          // Tjek for sirvoy-betalte pakker for denne booking
           const { data: existingEnergyPackage } = await supabaseClient
             .from('plugin_data')
             .select('id')
             .eq('module', 'pakker')
             .filter('data->>booking_nummer', 'eq', bookingId.toString())
-            .filter('data->>pakke_kategori', 'eq', 'sirvoy_energy')
+            .filter('data->>betaling_metode', 'eq', 'sirvoy')
             .maybeSingle();
 
           if (!existingEnergyPackage) {
@@ -875,25 +890,27 @@ Deno.serve(async (req) => {
               startEnergy = meterReading?.energy || 0;
             }
 
-            // Opret dagspakke
+            // Beregn varighed i timer (quantity = antal dage)
+            const varighedTimer = energyItem.quantity * 24;
+
+            // Opret dagspakke med SAMME struktur som stripe-webhook
             const { error: packageError } = await supabaseClient
               .from('plugin_data')
               .insert({
                 organization_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
                 module: 'pakker',
                 ref_id: bookingId.toString(),
-                key: `pakke_sirvoy_energy_${bookingId}_${Date.now()}`,
+                key: `pakke_sirvoy_${bookingId}_${Date.now()}`,
                 data: {
                   booking_nummer: bookingId,
-                  type_id: 'sirvoy-energy',
-                  pakke_navn: `Dagspakke ${enheder} enheder (Sirvoy)`,
-                  pakke_kategori: 'sirvoy_energy',
+                  pakke_navn: `Dagspakke ${energyItem.quantity} dage (Sirvoy)`,
                   pakke_type: 'dags',
                   enheder: enheder,
+                  varighed_timer: varighedTimer,
                   pakke_start_energy: startEnergy,
                   status: 'aktiv',
                   betaling_metode: 'sirvoy',
-                  kunde_type: 'kørende',
+                  oprettet: new Date().toISOString(),
                   sirvoy_quantity: energyItem.quantity,
                   sirvoy_price: energyItem.itemTotal
                 }
