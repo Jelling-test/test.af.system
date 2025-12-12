@@ -1941,10 +1941,12 @@ const AdminKunder = ({ isStaffView = false }: AdminKunderProps = {}) => {
                       // Beregn total forbrug med accumulated_usage fra ALLE pakker
                       const accumulated = activePakker.reduce((sum: number, p: any) => 
                         sum + parseFloat(p.data?.accumulated_usage || '0'), 0);
-                      const pakkeStart = activePakker[0]?.data?.pakke_start_energy !== null && activePakker[0]?.data?.pakke_start_energy !== undefined
-                        ? activePakker[0].data.pakke_start_energy
-                        : selectedCustomer?.data.meter_start_energy || 0;
-                      const currentMeterUsage = customerDetails.meterReading ? (customerDetails.meterReading.energy - pakkeStart) : 0;
+                      // Option D: Brug pakke_start_energy KUN hvis > 0, ellers meter_start_energy
+                      const pakkeStartRaw = activePakker[0]?.data?.pakke_start_energy;
+                      const pakkeStart = (pakkeStartRaw !== null && pakkeStartRaw !== undefined && pakkeStartRaw > 0)
+                        ? pakkeStartRaw
+                        : parseFloat(selectedCustomer?.data.meter_start_energy || '0');
+                      const currentMeterUsage = customerDetails.meterReading ? Math.max(0, customerDetails.meterReading.energy - pakkeStart) : 0;
                       const totalActualUsage = accumulated + currentMeterUsage;
                       
                       // Distribute usage: dagspakke first, then tillæg in order

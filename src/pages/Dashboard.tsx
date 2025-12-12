@@ -411,8 +411,10 @@ const Dashboard = () => {
   
   // Calculate total actual usage (accumulated + current meter + ekstra målere)
   const accumulated = parseFloat(pakker[0]?.data?.accumulated_usage || '0');
-  const pakkeStart = pakker[0]?.data?.pakke_start_energy !== null && pakker[0]?.data?.pakke_start_energy !== undefined
-    ? pakker[0].data.pakke_start_energy
+  // Option D: Brug pakke_start_energy KUN hvis > 0, ellers meter_start_energy
+  const pakkeStartRaw = pakker[0]?.data?.pakke_start_energy;
+  const pakkeStart = (pakkeStartRaw !== null && pakkeStartRaw !== undefined && pakkeStartRaw > 0)
+    ? pakkeStartRaw
     : meterStartEnergy;
   const currentMeterUsage = Math.max(0, currentEnergy - pakkeStart);
   

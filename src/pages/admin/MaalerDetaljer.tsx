@@ -406,19 +406,23 @@ const MaalerDetaljer = ({ isStaffView = false }: MaalerDetaljerProps = {}) => {
                         const activePakker = packages.filter((p: any) => p.data.status === 'aktiv');
                         
                         // Beregn total forbrug baseret på den ÆLDSTE aktive pakkes start
+                        // Option D: Brug pakke_start_energy KUN hvis > 0, ellers meter_start_energy
                         const oldestActivePakke = activePakker.reduce((oldest: any, p: any) => {
-                          const pStart = p.data.pakke_start_energy !== null && p.data.pakke_start_energy !== undefined
-                            ? p.data.pakke_start_energy
-                            : customer.meter_start_energy || 0;
-                          const oldestStart = oldest.data?.pakke_start_energy !== null && oldest.data?.pakke_start_energy !== undefined
-                            ? oldest.data.pakke_start_energy
-                            : customer.meter_start_energy || 0;
+                          const pStartRaw = p.data.pakke_start_energy;
+                          const pStart = (pStartRaw !== null && pStartRaw !== undefined && pStartRaw > 0)
+                            ? pStartRaw
+                            : parseFloat(customer.meter_start_energy || '0');
+                          const oldestStartRaw = oldest.data?.pakke_start_energy;
+                          const oldestStart = (oldestStartRaw !== null && oldestStartRaw !== undefined && oldestStartRaw > 0)
+                            ? oldestStartRaw
+                            : parseFloat(customer.meter_start_energy || '0');
                           return pStart < oldestStart ? p : oldest;
                         }, activePakker[0] || {});
                         
-                        const totalStartEnergy = oldestActivePakke.data?.pakke_start_energy !== null && oldestActivePakke.data?.pakke_start_energy !== undefined
-                          ? oldestActivePakke.data.pakke_start_energy
-                          : customer.meter_start_energy || 0;
+                        const totalStartRaw = oldestActivePakke.data?.pakke_start_energy;
+                        const totalStartEnergy = (totalStartRaw !== null && totalStartRaw !== undefined && totalStartRaw > 0)
+                          ? totalStartRaw
+                          : parseFloat(customer.meter_start_energy || '0');
                         
                         // KRITISK: Inkluder accumulated_usage fra alle pakker (forbrug fra tidligere målere)
                         const totalAccumulated = activePakker.reduce((sum: number, p: any) => 
