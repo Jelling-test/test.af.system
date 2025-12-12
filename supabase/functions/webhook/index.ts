@@ -708,6 +708,60 @@ Deno.serve(async (req) => {
         }
       }
 
+      // ==================== AUTO-SEND VELKOMST EMAIL ====================
+      // Send email straks hvis ankomst er inden for X dage (variabel fra admin)
+      // Kun hvis kunde har email og ikke allerede har modtaget welcome_email
+      if (email && !checkedIn && !checkedOut) {
+        // Hent trigger_days_before fra welcome_email template
+        const { data: emailTemplate } = await supabaseClient
+          .from('email_templates')
+          .select('trigger_days_before')
+          .eq('name', 'welcome_email')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (emailTemplate?.trigger_days_before !== null) {
+          const triggerDays = emailTemplate.trigger_days_before;
+          const today = new Date(getDanishTime());
+          const arrival = new Date(arrivalDate);
+          const daysUntilArrival = Math.ceil((arrival.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+          // Send email hvis ankomst er inden for trigger_days_before dage
+          if (daysUntilArrival <= triggerDays && daysUntilArrival >= 0) {
+            // Tjek om email allerede er sendt
+            const { data: existingEmailLog } = await supabaseClient
+              .from('email_logs')
+              .select('id')
+              .eq('booking_id', bookingId)
+              .eq('template_name', 'welcome_email')
+              .maybeSingle();
+
+            if (!existingEmailLog) {
+              // Send welcome email via Edge Function
+              try {
+                const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+                const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ booking_id: bookingId })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                  console.log(`✅ Velkomst email AUTO-SENDT til ${email} (ankomst om ${daysUntilArrival} dage, trigger: ${triggerDays} dage)`);
+                } else {
+                  console.error(`Fejl ved auto-send af velkomst email:`, result.error);
+                }
+              } catch (emailError) {
+                console.error(`Fejl ved kald af send-welcome-email:`, emailError);
+              }
+            } else {
+              console.log(`Velkomst email allerede sendt til booking ${bookingId}`);
+            }
+          }
+        }
+      }
+
       // Håndter nummerplader
       const { data: existingPlates } = await supabaseClient
         .from('approved_plates')
