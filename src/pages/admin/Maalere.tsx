@@ -99,13 +99,9 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
   const [sendEmailStats, setSendEmailStats] = useState(false);
   const [availableEntities, setAvailableEntities] = useState<string[]>([]);
   const [discoveredMeters, setDiscoveredMeters] = useState<string[]>([]);
-  const [showConfigureModal, setShowConfigureModal] = useState(false);
-  
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [configuringMeters, setConfiguringMeters] = useState(false);
-  const [configurationProgress, setConfigurationProgress] = useState({ current: 0, total: 0, currentMeter: '' });
 
   useEffect(() => {
     fetchMeters();
@@ -374,49 +370,6 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
     );
   };
 
-  const handleConfigureAllMeters = async () => {
-    setConfiguringMeters(true);
-    setConfigurationProgress({ current: 0, total: meters.length, currentMeter: '' });
-
-    try {
-      // Call MQTT Config Service on NAS
-      const NAS_IP = '192.168.9.61'; // Same server as MQTT broker
-      const response = await fetch(`http://${NAS_IP}:3001/configure-meters`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          meters: meters.map(m => m.meter_id)
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(`${data.configured} målere konfigureret succesfuldt!`);
-      } else {
-        throw new Error(data.error || 'Unknown error');
-      }
-      
-      // Wait a bit and refresh
-      setTimeout(() => {
-        fetchMeters();
-        setShowConfigureModal(false);
-        setConfiguringMeters(false);
-      }, 2000);
-
-    } catch (error) {
-      console.error("Error configuring meters:", error);
-      toast.error("Fejl ved konfiguration af målere. Er MQTT Config Service kørende på NAS?");
-      setConfiguringMeters(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -440,15 +393,6 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <CardTitle className="text-base sm:text-lg">Måler oversigt</CardTitle>
                   <div className="flex gap-2">
-                    <Button 
-                      onClick={() => setShowConfigureModal(true)} 
-                      variant="default" 
-                      className="min-h-[44px]"
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Konfigurer Målere</span>
-                      <span className="sm:hidden">Konfigurer</span>
-                    </Button>
                     <Button onClick={fetchMeters} variant="outline" className="min-h-[44px]">
                       <RefreshCw className="mr-2 h-4 w-4" />
                       <span className="hidden sm:inline">Opdater</span>
@@ -784,79 +728,6 @@ const AdminMaalere = ({ isStaffView = false }: AdminMaalereProps = {}) => {
             </Button>
             <Button onClick={handleRenameMeter} disabled={!nameAvailable}>
               Gem
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Configure Meters Modal */}
-      <Dialog open={showConfigureModal} onOpenChange={setShowConfigureModal}>
-        <DialogContent className="bg-background">
-          <DialogHeader>
-            <DialogTitle>Konfigurer Tongou Målere</DialogTitle>
-            <DialogDescription>
-              Dette vil konfigurere alle Tongou TO-Q-SY1-JZT målere til at rapportere data korrekt.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <Settings className="h-5 w-5 text-blue-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Hvad sker der?</p>
-                <p className="text-sm text-muted-foreground">
-                  Alle Tongou målere vil blive konfigureret til at:
-                </p>
-                <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                  <li>Rapportere data hvert 60. sekund</li>
-                  <li>Sende power, current, voltage og energy korrekt</li>
-                  <li>Fixe "null" energy problem</li>
-                </ul>
-              </div>
-            </div>
-            
-            {configuringMeters && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Fremskridt:</span>
-                  <span>{configurationProgress.current} / {configurationProgress.total}</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(configurationProgress.current / configurationProgress.total) * 100}%` }}
-                  />
-                </div>
-                {configurationProgress.currentMeter && (
-                  <p className="text-sm text-muted-foreground">
-                    Konfigurerer: {configurationProgress.currentMeter}
-                  </p>
-                )}
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Bemærk</p>
-                <p className="text-sm text-muted-foreground">
-                  Det kan tage 5-10 minutter før målerne begynder at rapportere regelmæssigt.
-                </p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowConfigureModal(false)}
-              disabled={configuringMeters}
-            >
-              Annuller
-            </Button>
-            <Button 
-              onClick={handleConfigureAllMeters}
-              disabled={configuringMeters}
-            >
-              {configuringMeters ? "Konfigurerer..." : "Start Konfiguration"}
             </Button>
           </DialogFooter>
         </DialogContent>
