@@ -928,11 +928,25 @@ const AdminCafe = () => {
                           <Button 
                             variant="outline"
                             onClick={() => {
-                              const printContent = filteredOrders.map(o => 
-                                `${o.guest_name} | #${o.booking_id} | ${o.guest_phone || '-'} | ${o.timeslot || '-'} | ${o.dining_option === 'eat_in' ? 'Spise i café' : 'Tag med'} | ${o.quantity}× ${o.offer_name}`
-                              ).join('\n');
+                              const offerName = filteredOrders[0]?.offer_name || 'Tilbud';
+                              const totalQty = filteredOrders.reduce((sum, o) => sum + o.quantity, 0);
+                              const eatIn = filteredOrders.filter(o => o.dining_option === 'eat_in').reduce((sum, o) => sum + o.quantity, 0);
+                              const takeaway = filteredOrders.filter(o => o.dining_option === 'takeaway').reduce((sum, o) => sum + o.quantity, 0);
+                              const printContent = `
+CAFÉ BESTILLINGER - OVERSIGT
+=============================
+
+Tilbud: ${offerName}
+
+Total antal: ${totalQty} stk
+
+  - Spise i café: ${eatIn} stk
+  - Tag med: ${takeaway} stk
+
+=============================
+`;
                               const w = window.open('', '_blank');
-                              w?.document.write(`<pre style="font-family: monospace; font-size: 12px;">${printContent}</pre>`);
+                              w?.document.write(`<pre style="font-family: monospace; font-size: 14px;">${printContent}</pre>`);
                               w?.print();
                             }}
                           >
@@ -941,13 +955,32 @@ const AdminCafe = () => {
                           <Button 
                             variant="outline"
                             onClick={() => {
-                              let printContent = '';
+                              const offerName = filteredOrders[0]?.offer_name || 'Tilbud';
+                              const pad = (str: string, len: number) => str.padEnd(len);
+                              let printContent = `CAFÉ BESTILLINGER - ${offerName}\n`;
+                              printContent += '='.repeat(70) + '\n\n';
+                              
                               sortedSlots.forEach(slot => {
-                                printContent += `\n=== ${slot} ===\n`;
-                                groupedByTimeslot[slot].forEach(o => {
-                                  printContent += `${o.guest_name} | #${o.booking_id} | ${o.guest_phone || '-'} | ${o.dining_option === 'eat_in' ? '🍽️' : '📦'} | ${o.quantity}×\n`;
+                                const slotOrders = groupedByTimeslot[slot];
+                                const slotTotal = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
+                                printContent += `\n${slot} (${slotTotal} stk)\n`;
+                                printContent += '-'.repeat(70) + '\n';
+                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} ${pad('Type', 12)} Pris\n`;
+                                printContent += '-'.repeat(70) + '\n';
+                                
+                                slotOrders.forEach(o => {
+                                  const name = (o.guest_name || '').substring(0, 24);
+                                  const qty = `${o.quantity}×`;
+                                  const booking = `#${o.booking_id || '-'}`;
+                                  const type = o.dining_option === 'eat_in' ? 'Spise i café' : 'Tag med';
+                                  const price = `${o.total} kr`;
+                                  printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${pad(type, 12)} ${price}\n`;
                                 });
                               });
+                              
+                              printContent += '\n' + '='.repeat(70) + '\n';
+                              printContent += `TOTAL: ${filteredOrders.reduce((sum, o) => sum + o.quantity, 0)} stk - ${filteredOrders.reduce((sum, o) => sum + o.total, 0)} kr\n`;
+                              
                               const w = window.open('', '_blank');
                               w?.document.write(`<pre style="font-family: monospace; font-size: 12px;">${printContent}</pre>`);
                               w?.print();
