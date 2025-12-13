@@ -62,6 +62,10 @@ interface Offer {
   execution_date?: string;
   order_deadline?: string;
   cancel_deadline?: string;
+  eat_in_capacity_per_slot?: number;
+  takeaway_capacity_per_slot?: number;
+  total_max_orders?: number;
+  timeslots?: string[];
   is_active: boolean;
   sort_order: number;
 }
@@ -72,10 +76,12 @@ interface CafeOrder {
   booking_id?: number;
   guest_name: string;
   guest_phone?: string;
+  offer_id?: string;
   offer_name?: string;
   quantity: number;
   dining_option?: string;
   execution_date?: string;
+  timeslot?: string;
   total: number;
   status: string;
   created_at: string;
@@ -108,6 +114,7 @@ const AdminCafe = () => {
   const [activeTab, setActiveTab] = useState('hours');
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [selectedOfferFilter, setSelectedOfferFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchAll();
@@ -304,6 +311,9 @@ const AdminCafe = () => {
             image_url: offer.image_url || null,
             visible_from: offer.visible_from || null,
             visible_to: offer.visible_to || null,
+            eat_in_capacity_per_slot: offer.eat_in_capacity_per_slot || 12,
+            takeaway_capacity_per_slot: offer.takeaway_capacity_per_slot || 20,
+            total_max_orders: offer.total_max_orders || null,
             is_active: offer.is_active,
             updated_at: new Date().toISOString()
           })
@@ -321,6 +331,9 @@ const AdminCafe = () => {
             image_url: offer.image_url || null,
             visible_from: offer.visible_from || null,
             visible_to: offer.visible_to || null,
+            eat_in_capacity_per_slot: offer.eat_in_capacity_per_slot || 12,
+            takeaway_capacity_per_slot: offer.takeaway_capacity_per_slot || 20,
+            total_max_orders: offer.total_max_orders || null,
             is_active: offer.is_active,
             sort_order: offers.length + 1
           });
@@ -649,6 +662,24 @@ const AdminCafe = () => {
                       <Input type="datetime-local" value={editingOffer.visible_to || ''} onChange={e => setEditingOffer({...editingOffer, visible_to: e.target.value})} />
                     </div>
                   </div>
+                  {/* Kapacitet */}
+                  <div className="p-4 bg-blue-50 rounded-lg space-y-4">
+                    <p className="font-medium text-blue-800">Kapacitet per timeslot</p>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label>🍽️ Spise i café</Label>
+                        <Input type="number" min={0} value={editingOffer.eat_in_capacity_per_slot || 12} onChange={e => setEditingOffer({...editingOffer, eat_in_capacity_per_slot: parseInt(e.target.value) || 12})} />
+                      </div>
+                      <div>
+                        <Label>📦 Tag med</Label>
+                        <Input type="number" min={0} value={editingOffer.takeaway_capacity_per_slot || 20} onChange={e => setEditingOffer({...editingOffer, takeaway_capacity_per_slot: parseInt(e.target.value) || 20})} />
+                      </div>
+                      <div>
+                        <Label>Total maks (0=ingen)</Label>
+                        <Input type="number" min={0} value={editingOffer.total_max_orders || 0} onChange={e => setEditingOffer({...editingOffer, total_max_orders: parseInt(e.target.value) || null})} />
+                      </div>
+                    </div>
+                  </div>
                   {/* Billede upload */}
                   <div>
                     <Label>Billede</Label>
@@ -800,40 +831,135 @@ const AdminCafe = () => {
               <CardHeader>
                 <CardTitle>Café Bestillinger</CardTitle>
               </CardHeader>
-              <CardContent>
-                {orders.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Ingen bestillinger endnu</p>
-                ) : (
-                  <div className="space-y-3">
-                    {orders.map(order => (
-                      <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm">#{order.order_number}</span>
-                            <span className="font-medium">{order.guest_name}</span>
-                            <Badge variant={order.status === 'pending' ? 'default' : order.status === 'confirmed' ? 'secondary' : 'outline'}>
-                              {order.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {order.offer_name} × {order.quantity} = {order.total} kr
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          {order.status === 'pending' && (
-                            <Button size="sm" onClick={() => updateOrderStatus(order.id, 'confirmed')}>Bekræft</Button>
-                          )}
-                          {order.status === 'confirmed' && (
-                            <Button size="sm" onClick={() => updateOrderStatus(order.id, 'ready')}>Klar</Button>
-                          )}
-                          {order.status === 'ready' && (
-                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, 'collected')}>Afhentet</Button>
-                          )}
-                        </div>
-                      </div>
+              <CardContent className="space-y-4">
+                {/* Tilbuds-filter */}
+                <div className="flex items-center gap-4">
+                  <Label>Vælg tilbud:</Label>
+                  <select 
+                    value={selectedOfferFilter} 
+                    onChange={e => setSelectedOfferFilter(e.target.value)}
+                    className="p-2 border rounded-md min-w-[200px]"
+                  >
+                    <option value="all">Alle tilbud</option>
+                    {offers.sort((a, b) => new Date(b.visible_from || 0).getTime() - new Date(a.visible_from || 0).getTime()).map(offer => (
+                      <option key={offer.id} value={offer.id}>
+                        {offer.name} {offer.execution_date ? `(${offer.execution_date})` : ''} {!offer.is_active ? '(udløbet)' : ''}
+                      </option>
                     ))}
-                  </div>
-                )}
+                  </select>
+                </div>
+
+                {(() => {
+                  const filteredOrders = selectedOfferFilter === 'all' 
+                    ? orders.filter(o => o.status !== 'cancelled')
+                    : orders.filter(o => o.offer_id === selectedOfferFilter && o.status !== 'cancelled');
+                  
+                  const eatInCount = filteredOrders.filter(o => o.dining_option === 'eat_in').reduce((sum, o) => sum + o.quantity, 0);
+                  const takeawayCount = filteredOrders.filter(o => o.dining_option === 'takeaway').reduce((sum, o) => sum + o.quantity, 0);
+                  
+                  const groupedByTimeslot = filteredOrders.reduce((acc, order) => {
+                    const slot = order.timeslot || 'Ikke angivet';
+                    if (!acc[slot]) acc[slot] = [];
+                    acc[slot].push(order);
+                    return acc;
+                  }, {} as Record<string, CafeOrder[]>);
+
+                  const sortedSlots = Object.keys(groupedByTimeslot).sort();
+
+                  return (
+                    <>
+                      {/* Oversigt */}
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="font-medium">
+                          Total: {filteredOrders.length} bestillinger ({filteredOrders.reduce((sum, o) => sum + o.quantity, 0)} stk) | 
+                          🍽️ Spise i café: {eatInCount} | 📦 Tag med: {takeawayCount}
+                        </p>
+                      </div>
+
+                      {filteredOrders.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">Ingen bestillinger for dette tilbud</p>
+                      ) : (
+                        <div className="space-y-6">
+                          {sortedSlots.map(slot => (
+                            <div key={slot} className="border rounded-lg overflow-hidden">
+                              <div className="bg-gray-100 p-3 font-medium flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                {slot} ({groupedByTimeslot[slot].reduce((sum, o) => sum + o.quantity, 0)} stk)
+                              </div>
+                              <div className="divide-y">
+                                {groupedByTimeslot[slot].map(order => (
+                                  <div key={order.id} className="flex items-center justify-between p-3">
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">{order.guest_name}</span>
+                                        <span className="text-sm text-gray-500">#{order.booking_id}</span>
+                                        {order.guest_phone && <span className="text-sm text-gray-500">{order.guest_phone}</span>}
+                                        <span>{order.dining_option === 'eat_in' ? '🍽️' : '📦'}</span>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">
+                                        {order.quantity}× {order.offer_name} = {order.total} kr
+                                      </p>
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="text-red-600"
+                                      onClick={async () => {
+                                        if (confirm('Vil du slette denne bestilling?')) {
+                                          await supabase.from('cafe_orders').delete().eq('id', order.id);
+                                          setOrders(prev => prev.filter(o => o.id !== order.id));
+                                          toast.success('Bestilling slettet');
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Print knapper */}
+                      {filteredOrders.length > 0 && (
+                        <div className="flex gap-2 pt-4 border-t">
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              const printContent = filteredOrders.map(o => 
+                                `${o.guest_name} | #${o.booking_id} | ${o.guest_phone || '-'} | ${o.timeslot || '-'} | ${o.dining_option === 'eat_in' ? 'Spise i café' : 'Tag med'} | ${o.quantity}× ${o.offer_name}`
+                              ).join('\n');
+                              const w = window.open('', '_blank');
+                              w?.document.write(`<pre style="font-family: monospace; font-size: 12px;">${printContent}</pre>`);
+                              w?.print();
+                            }}
+                          >
+                            🖨️ Print total liste
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              let printContent = '';
+                              sortedSlots.forEach(slot => {
+                                printContent += `\n=== ${slot} ===\n`;
+                                groupedByTimeslot[slot].forEach(o => {
+                                  printContent += `${o.guest_name} | #${o.booking_id} | ${o.guest_phone || '-'} | ${o.dining_option === 'eat_in' ? '🍽️' : '📦'} | ${o.quantity}×\n`;
+                                });
+                              });
+                              const w = window.open('', '_blank');
+                              w?.document.write(`<pre style="font-family: monospace; font-size: 12px;">${printContent}</pre>`);
+                              w?.print();
+                            }}
+                          >
+                            🖨️ Print per timeslot
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
