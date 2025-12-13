@@ -958,23 +958,52 @@ Total antal: ${totalQty} stk
                               const offerName = filteredOrders[0]?.offer_name || 'Tilbud';
                               const pad = (str: string, len: number) => str.padEnd(len);
                               let printContent = `CAFÉ BESTILLINGER - ${offerName}\n`;
-                              printContent += '='.repeat(70) + '\n\n';
+                              printContent += '='.repeat(70) + '\n';
+                              
+                              const takeawayOrders = filteredOrders.filter(o => o.dining_option === 'takeaway');
+                              const eatInOrders = filteredOrders.filter(o => o.dining_option === 'eat_in');
+                              
+                              // SEKTION 1: TAG MED
+                              printContent += `\n📦 TAG MED (${takeawayOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
+                              printContent += '='.repeat(70) + '\n';
                               
                               sortedSlots.forEach(slot => {
-                                const slotOrders = groupedByTimeslot[slot];
-                                const slotTotal = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
-                                printContent += `\n${slot} (${slotTotal} stk)\n`;
+                                const slotOrders = takeawayOrders.filter(o => (o.timeslot || 'Ikke angivet') === slot);
+                                if (slotOrders.length === 0) return;
+                                
+                                printContent += `\n${slot} (${slotOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
                                 printContent += '-'.repeat(70) + '\n';
-                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} ${pad('Type', 12)} Pris\n`;
+                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} Pris\n`;
                                 printContent += '-'.repeat(70) + '\n';
                                 
                                 slotOrders.forEach(o => {
                                   const name = (o.guest_name || '').substring(0, 24);
                                   const qty = `${o.quantity}×`;
                                   const booking = `#${o.booking_id || '-'}`;
-                                  const type = o.dining_option === 'eat_in' ? 'Spise i café' : 'Tag med';
                                   const price = `${o.total} kr`;
-                                  printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${pad(type, 12)} ${price}\n`;
+                                  printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${price}\n`;
+                                });
+                              });
+                              
+                              // SEKTION 2: SPISE I CAFÉ
+                              printContent += `\n\n🍽️ SPISE I CAFÉ (${eatInOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
+                              printContent += '='.repeat(70) + '\n';
+                              
+                              sortedSlots.forEach(slot => {
+                                const slotOrders = eatInOrders.filter(o => (o.timeslot || 'Ikke angivet') === slot);
+                                if (slotOrders.length === 0) return;
+                                
+                                printContent += `\n${slot} (${slotOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
+                                printContent += '-'.repeat(70) + '\n';
+                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} Pris\n`;
+                                printContent += '-'.repeat(70) + '\n';
+                                
+                                slotOrders.forEach(o => {
+                                  const name = (o.guest_name || '').substring(0, 24);
+                                  const qty = `${o.quantity}×`;
+                                  const booking = `#${o.booking_id || '-'}`;
+                                  const price = `${o.total} kr`;
+                                  printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${price}\n`;
                                 });
                               });
                               
