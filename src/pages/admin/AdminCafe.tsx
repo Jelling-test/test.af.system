@@ -13,9 +13,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Save, ArrowLeft, Coffee, Plus, Trash2, UtensilsCrossed, Wine, 
-  Clock, Upload, Loader2, Pencil, X, Check, Phone
+  Clock, Upload, Loader2, Pencil, X, Check, Phone, BarChart3, Calendar as CalendarIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { da } from 'date-fns/locale';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface OpeningHours {
   [key: string]: { open: string; close: string; closed: boolean };
@@ -87,6 +103,7 @@ interface CafeOrder {
   total: number;
   status: string;
   created_at: string;
+  guest_type?: string;
 }
 
 const defaultOpeningHours: OpeningHours = {
@@ -127,6 +144,12 @@ const AdminCafe = () => {
   });
   const [phoneOrderSubmitting, setPhoneOrderSubmitting] = useState(false);
   const [capacityWarning, setCapacityWarning] = useState<string | null>(null);
+  
+  // Statistik state
+  const [statsStartDate, setStatsStartDate] = useState<Date>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+  const [statsEndDate, setStatsEndDate] = useState<Date>(new Date());
+  const [statsData, setStatsData] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -386,6 +409,59 @@ const AdminCafe = () => {
     }
   };
 
+  // Statistik funktion
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const startStr = format(statsStartDate, 'yyyy-MM-dd');
+      const endStr = format(statsEndDate, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('cafe_orders')
+        .select('*')
+        .gte('execution_date', startStr)
+        .lte('execution_date', endStr)
+        .neq('status', 'cancelled');
+      
+      if (error) throw error;
+      
+      // Gruppér efter tilbud og gæstetype
+      const grouped: Record<string, any> = {};
+      (data || []).forEach((order: any) => {
+        const key = `${order.offer_name}_${order.execution_date}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            offer_name: order.offer_name,
+            execution_date: order.execution_date,
+            kørende: 0,
+            hytte: 0,
+            sæson: 0,
+            telefon: 0,
+            total: 0
+          };
+        }
+        const guestType = order.guest_type || 'ukendt';
+        if (guestType === 'kørende') grouped[key].kørende += order.quantity;
+        else if (guestType === 'hytte') grouped[key].hytte += order.quantity;
+        else if (guestType === 'sæson') grouped[key].sæson += order.quantity;
+        else if (guestType === 'telefon') grouped[key].telefon += order.quantity;
+        grouped[key].total += order.quantity;
+      });
+      
+      const result = Object.values(grouped).sort((a: any, b: any) => 
+        new Date(a.execution_date).getTime() - new Date(b.execution_date).getTime()
+      );
+      
+      setStatsData(result);
+      toast.success(`Fandt ${result.length} tilbud i perioden`);
+    } catch (err) {
+      console.error('Stats error:', err);
+      toast.error('Fejl ved hentning af statistik');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   // Telefon ordre funktion
   const handlePhoneOrder = async (confirmed: boolean = false) => {
     if (!phoneOrder.guest_name || !phoneOrder.guest_phone || !phoneOrder.timeslot) {
@@ -438,7 +514,8 @@ const AdminCafe = () => {
           timeslot: phoneOrder.timeslot,
           execution_date: selectedOffer.execution_date || null,
           total: selectedOffer.price * phoneOrder.quantity,
-          status: 'confirmed'
+          status: 'confirmed',
+          guest_type: 'telefon'
         });
       
       if (error) throw error;
@@ -493,6 +570,7 @@ const AdminCafe = () => {
             <TabsTrigger value="offers" className="gap-2"><Wine className="h-4 w-4" /> Tilbud</TabsTrigger>
             <TabsTrigger value="contact" className="gap-2"><Phone className="h-4 w-4" /> Kontakt</TabsTrigger>
             <TabsTrigger value="orders">Bestillinger ({orders.filter(o => o.status === 'pending').length})</TabsTrigger>
+            <TabsTrigger value="stats" className="gap-2"><BarChart3 className="h-4 w-4" /> Statistik</TabsTrigger>
           </TabsList>
 
           {/* ÅBNINGSTIDER */}
@@ -973,11 +1051,24 @@ const AdminCafe = () => {
                                   <div key={order.id} className="flex items-center justify-between p-3">
                                     <div>
                                       <div className="flex items-center gap-2">
-                                        {!order.booking_id && <span title="Telefon ordre">📞</span>}
                                         <span className="font-medium">{order.guest_name}</span>
                                         <span className="text-sm text-gray-500">{order.booking_id ? `#${order.booking_id}` : ''}</span>
                                         {order.guest_phone && <span className="text-sm text-gray-500">{order.guest_phone}</span>}
                                         <span>{order.dining_option === 'eat_in' ? '🍽️' : '📦'}</span>
+                                        {order.guest_type && (
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                            order.guest_type === 'kørende' ? 'bg-blue-100 text-blue-700' :
+                                            order.guest_type === 'hytte' ? 'bg-green-100 text-green-700' :
+                                            order.guest_type === 'sæson' ? 'bg-purple-100 text-purple-700' :
+                                            order.guest_type === 'telefon' ? 'bg-orange-100 text-orange-700' :
+                                            'bg-gray-100 text-gray-700'
+                                          }`}>
+                                            {order.guest_type === 'kørende' ? '🚐' : 
+                                             order.guest_type === 'hytte' ? '🏠' : 
+                                             order.guest_type === 'sæson' ? '📅' : 
+                                             order.guest_type === 'telefon' ? '📞' : ''} {order.guest_type}
+                                          </span>
+                                        )}
                                       </div>
                                       <p className="text-sm text-muted-foreground">
                                         {order.quantity}× {order.offer_name} = {order.total} kr
@@ -1257,6 +1348,174 @@ Total antal: ${totalQty} stk
                     </>
                   );
                 })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* STATISTIK */}
+          <TabsContent value="stats">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Café Statistik
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Periode vælger */}
+                <div className="flex flex-wrap items-end gap-4">
+                  <div>
+                    <Label>Fra dato</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(statsStartDate, 'dd/MM/yyyy', { locale: da })}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar mode="single" selected={statsStartDate} onSelect={(d) => d && setStatsStartDate(d)} locale={da} />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>Til dato</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(statsEndDate, 'dd/MM/yyyy', { locale: da })}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar mode="single" selected={statsEndDate} onSelect={(d) => d && setStatsEndDate(d)} locale={da} />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button onClick={fetchStats} disabled={statsLoading}>
+                    {statsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Hent statistik
+                  </Button>
+                </div>
+
+                {statsData.length > 0 && (
+                  <>
+                    {/* Totaler */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-blue-700">{statsData.reduce((sum, s) => sum + s.kørende, 0)}</p>
+                        <p className="text-sm text-blue-600">🚐 Kørende</p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-green-700">{statsData.reduce((sum, s) => sum + s.hytte, 0)}</p>
+                        <p className="text-sm text-green-600">🏠 Hytte</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-purple-700">{statsData.reduce((sum, s) => sum + s.sæson, 0)}</p>
+                        <p className="text-sm text-purple-600">📅 Sæson</p>
+                      </div>
+                      <div className="p-4 bg-orange-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-orange-700">{statsData.reduce((sum, s) => sum + s.telefon, 0)}</p>
+                        <p className="text-sm text-orange-600">📞 Telefon</p>
+                      </div>
+                      <div className="p-4 bg-gray-100 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-gray-700">{statsData.reduce((sum, s) => sum + s.total, 0)}</p>
+                        <p className="text-sm text-gray-600">Total</p>
+                      </div>
+                    </div>
+
+                    {/* Graf */}
+                    <div className="h-[400px]">
+                      <Bar
+                        data={{
+                          labels: statsData.map(s => `${s.offer_name}\n${s.execution_date}`),
+                          datasets: [
+                            {
+                              label: '🚐 Kørende',
+                              data: statsData.map(s => s.kørende),
+                              backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            },
+                            {
+                              label: '🏠 Hytte',
+                              data: statsData.map(s => s.hytte),
+                              backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            },
+                            {
+                              label: '📅 Sæson',
+                              data: statsData.map(s => s.sæson),
+                              backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                            },
+                            {
+                              label: '📞 Telefon',
+                              data: statsData.map(s => s.telefon),
+                              backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                            },
+                          ],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                              callbacks: {
+                                label: (context) => `${context.dataset.label}: ${context.parsed.y} stk`
+                              }
+                            }
+                          },
+                          scales: {
+                            x: { stacked: false },
+                            y: { stacked: false, beginAtZero: true }
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Tabel */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-gray-50">
+                            <th className="text-left p-3">Tilbud</th>
+                            <th className="text-left p-3">Dato</th>
+                            <th className="text-right p-3">🚐 Kørende</th>
+                            <th className="text-right p-3">🏠 Hytte</th>
+                            <th className="text-right p-3">📅 Sæson</th>
+                            <th className="text-right p-3">📞 Telefon</th>
+                            <th className="text-right p-3 font-bold">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {statsData.map((row, i) => (
+                            <tr key={i} className="border-b hover:bg-gray-50">
+                              <td className="p-3">{row.offer_name}</td>
+                              <td className="p-3">{row.execution_date}</td>
+                              <td className="text-right p-3 text-blue-600">{row.kørende}</td>
+                              <td className="text-right p-3 text-green-600">{row.hytte}</td>
+                              <td className="text-right p-3 text-purple-600">{row.sæson}</td>
+                              <td className="text-right p-3 text-orange-600">{row.telefon}</td>
+                              <td className="text-right p-3 font-bold">{row.total}</td>
+                            </tr>
+                          ))}
+                          <tr className="bg-gray-100 font-bold">
+                            <td className="p-3" colSpan={2}>TOTAL</td>
+                            <td className="text-right p-3 text-blue-600">{statsData.reduce((sum, s) => sum + s.kørende, 0)}</td>
+                            <td className="text-right p-3 text-green-600">{statsData.reduce((sum, s) => sum + s.hytte, 0)}</td>
+                            <td className="text-right p-3 text-purple-600">{statsData.reduce((sum, s) => sum + s.sæson, 0)}</td>
+                            <td className="text-right p-3 text-orange-600">{statsData.reduce((sum, s) => sum + s.telefon, 0)}</td>
+                            <td className="text-right p-3">{statsData.reduce((sum, s) => sum + s.total, 0)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+
+                {statsData.length === 0 && !statsLoading && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Vælg en periode og klik "Hent statistik" for at se data
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
