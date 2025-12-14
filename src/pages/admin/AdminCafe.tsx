@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Save, ArrowLeft, Coffee, Plus, Trash2, UtensilsCrossed, Wine, 
   Clock, Upload, Loader2, Pencil, X, Check, Phone
@@ -115,6 +117,16 @@ const AdminCafe = () => {
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [selectedOfferFilter, setSelectedOfferFilter] = useState<string>('all');
+  const [phoneOrderDialogOpen, setPhoneOrderDialogOpen] = useState(false);
+  const [phoneOrder, setPhoneOrder] = useState({
+    guest_name: '',
+    guest_phone: '',
+    dining_option: 'takeaway' as 'eat_in' | 'takeaway',
+    quantity: 1,
+    timeslot: ''
+  });
+  const [phoneOrderSubmitting, setPhoneOrderSubmitting] = useState(false);
+  const [capacityWarning, setCapacityWarning] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -371,6 +383,76 @@ const AdminCafe = () => {
       fetchAll();
     } catch (err) {
       toast.error('Kunne ikke opdatere');
+    }
+  };
+
+  // Telefon ordre funktion
+  const handlePhoneOrder = async (confirmed: boolean = false) => {
+    if (!phoneOrder.guest_name || !phoneOrder.guest_phone || !phoneOrder.timeslot) {
+      toast.error('Udfyld alle felter');
+      return;
+    }
+
+    const selectedOffer = offers.find(o => o.id === selectedOfferFilter);
+    if (!selectedOffer) {
+      toast.error('Vælg et tilbud først');
+      return;
+    }
+
+    // Tjek kapacitet
+    const ordersForOffer = orders.filter(o => o.offer_id === selectedOfferFilter && o.status !== 'cancelled');
+    const ordersForSlot = ordersForOffer.filter(o => o.timeslot === phoneOrder.timeslot);
+    const currentEatIn = ordersForSlot.filter(o => o.dining_option === 'eat_in').reduce((sum, o) => sum + o.quantity, 0);
+    const currentTakeaway = ordersForSlot.filter(o => o.dining_option === 'takeaway').reduce((sum, o) => sum + o.quantity, 0);
+    
+    const eatInCap = selectedOffer.eat_in_capacity_per_slot || 12;
+    const takeawayCap = selectedOffer.takeaway_capacity_per_slot || 20;
+    
+    const isOverCapacity = phoneOrder.dining_option === 'eat_in' 
+      ? (currentEatIn + phoneOrder.quantity > eatInCap)
+      : (currentTakeaway + phoneOrder.quantity > takeawayCap);
+
+    if (isOverCapacity && !confirmed) {
+      const current = phoneOrder.dining_option === 'eat_in' ? currentEatIn : currentTakeaway;
+      const cap = phoneOrder.dining_option === 'eat_in' ? eatInCap : takeawayCap;
+      const type = phoneOrder.dining_option === 'eat_in' ? 'Spise i café' : 'Tag med';
+      setCapacityWarning(`Du overskrider kapaciteten for "${type}" kl. ${phoneOrder.timeslot}.\nNuværende: ${current}, Kapacitet: ${cap}, Tilføjer: ${phoneOrder.quantity}\nVil du fortsætte alligevel?`);
+      return;
+    }
+
+    setPhoneOrderSubmitting(true);
+    try {
+      const orderNumber = `T${Date.now().toString().slice(-8)}`;
+      
+      const { error } = await supabase
+        .from('cafe_orders')
+        .insert({
+          order_number: orderNumber,
+          booking_id: null,
+          guest_name: phoneOrder.guest_name,
+          guest_phone: phoneOrder.guest_phone,
+          offer_id: selectedOffer.id,
+          offer_name: selectedOffer.name,
+          quantity: phoneOrder.quantity,
+          dining_option: phoneOrder.dining_option,
+          timeslot: phoneOrder.timeslot,
+          execution_date: selectedOffer.execution_date || null,
+          total: selectedOffer.price * phoneOrder.quantity,
+          status: 'confirmed'
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Telefon ordre oprettet!');
+      setPhoneOrderDialogOpen(false);
+      setPhoneOrder({ guest_name: '', guest_phone: '', dining_option: 'takeaway', quantity: 1, timeslot: '' });
+      setCapacityWarning(null);
+      fetchAll();
+    } catch (err) {
+      console.error('Phone order error:', err);
+      toast.error('Fejl ved oprettelse af ordre');
+    } finally {
+      setPhoneOrderSubmitting(false);
     }
   };
 
@@ -891,8 +973,9 @@ const AdminCafe = () => {
                                   <div key={order.id} className="flex items-center justify-between p-3">
                                     <div>
                                       <div className="flex items-center gap-2">
+                                        {!order.booking_id && <span title="Telefon ordre">📞</span>}
                                         <span className="font-medium">{order.guest_name}</span>
-                                        <span className="text-sm text-gray-500">#{order.booking_id}</span>
+                                        <span className="text-sm text-gray-500">{order.booking_id ? `#${order.booking_id}` : ''}</span>
                                         {order.guest_phone && <span className="text-sm text-gray-500">{order.guest_phone}</span>}
                                         <span>{order.dining_option === 'eat_in' ? '🍽️' : '📦'}</span>
                                       </div>
@@ -967,19 +1050,26 @@ Total antal: ${totalQty} stk
                               printContent += `\n📦 TAG MED (${takeawayOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
                               printContent += '='.repeat(70) + '\n';
                               
+                              const selectedOffer = offers.find(o => o.id === selectedOfferFilter);
+                              const takeawayCap = selectedOffer?.takeaway_capacity_per_slot || 20;
+                              const eatInCap = selectedOffer?.eat_in_capacity_per_slot || 12;
+                              
                               sortedSlots.forEach(slot => {
                                 const slotOrders = takeawayOrders.filter(o => (o.timeslot || 'Ikke angivet') === slot);
                                 if (slotOrders.length === 0) return;
                                 
-                                printContent += `\n${slot} (${slotOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
+                                const slotTotal = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
+                                const isOverCap = slotTotal > takeawayCap;
+                                printContent += `\n${slot} (${slotTotal} stk)${isOverCap ? ' ⚠️ OVERSKREDET' : ''}\n`;
                                 printContent += '-'.repeat(70) + '\n';
-                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} Pris\n`;
+                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Type', 10)} Pris\n`;
                                 printContent += '-'.repeat(70) + '\n';
                                 
                                 slotOrders.forEach(o => {
-                                  const name = (o.guest_name || '').substring(0, 24);
+                                  const phoneIcon = !o.booking_id ? '📞 ' : '';
+                                  const name = (phoneIcon + (o.guest_name || '')).substring(0, 24);
                                   const qty = `${o.quantity}×`;
-                                  const booking = `#${o.booking_id || '-'}`;
+                                  const booking = o.booking_id ? `#${o.booking_id}` : 'Telefon';
                                   const price = `${o.total} kr`;
                                   printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${price}\n`;
                                 });
@@ -993,15 +1083,18 @@ Total antal: ${totalQty} stk
                                 const slotOrders = eatInOrders.filter(o => (o.timeslot || 'Ikke angivet') === slot);
                                 if (slotOrders.length === 0) return;
                                 
-                                printContent += `\n${slot} (${slotOrders.reduce((sum, o) => sum + o.quantity, 0)} stk)\n`;
+                                const slotTotal = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
+                                const isOverCap = slotTotal > eatInCap;
+                                printContent += `\n${slot} (${slotTotal} stk)${isOverCap ? ' ⚠️ OVERSKREDET' : ''}\n`;
                                 printContent += '-'.repeat(70) + '\n';
-                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Booking', 10)} Pris\n`;
+                                printContent += `${pad('Navn', 25)} ${pad('Antal', 8)} ${pad('Type', 10)} Pris\n`;
                                 printContent += '-'.repeat(70) + '\n';
                                 
                                 slotOrders.forEach(o => {
-                                  const name = (o.guest_name || '').substring(0, 24);
+                                  const phoneIcon = !o.booking_id ? '📞 ' : '';
+                                  const name = (phoneIcon + (o.guest_name || '')).substring(0, 24);
                                   const qty = `${o.quantity}×`;
-                                  const booking = `#${o.booking_id || '-'}`;
+                                  const booking = o.booking_id ? `#${o.booking_id}` : 'Telefon';
                                   const price = `${o.total} kr`;
                                   printContent += `${pad(name, 25)} ${pad(qty, 8)} ${pad(booking, 10)} ${price}\n`;
                                 });
@@ -1017,6 +1110,148 @@ Total antal: ${totalQty} stk
                           >
                             🖨️ Print per timeslot
                           </Button>
+                          
+                          {/* Telefon ordre knap */}
+                          {selectedOfferFilter !== 'all' && (
+                            <Dialog open={phoneOrderDialogOpen} onOpenChange={(open) => {
+                              setPhoneOrderDialogOpen(open);
+                              if (!open) {
+                                setCapacityWarning(null);
+                                setPhoneOrder({ guest_name: '', guest_phone: '', dining_option: 'takeaway', quantity: 1, timeslot: '' });
+                              }
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button variant="default" className="bg-green-600 hover:bg-green-700">
+                                  <Phone className="h-4 w-4 mr-2" />
+                                  Tilføj telefon ordre
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>📞 Ny telefon ordre</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 mt-4">
+                                  <p className="text-sm text-gray-600">
+                                    Tilbud: <strong>{offers.find(o => o.id === selectedOfferFilter)?.name}</strong> - {offers.find(o => o.id === selectedOfferFilter)?.price} kr/stk
+                                  </p>
+                                  
+                                  <div>
+                                    <Label>Navn *</Label>
+                                    <Input 
+                                      value={phoneOrder.guest_name} 
+                                      onChange={e => setPhoneOrder({...phoneOrder, guest_name: e.target.value})}
+                                      placeholder="Kundens navn"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Telefon *</Label>
+                                    <Input 
+                                      type="tel"
+                                      value={phoneOrder.guest_phone} 
+                                      onChange={e => setPhoneOrder({...phoneOrder, guest_phone: e.target.value})}
+                                      placeholder="+45 12 34 56 78"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Antal *</Label>
+                                    <Input 
+                                      type="number" 
+                                      min={1} 
+                                      value={phoneOrder.quantity} 
+                                      onChange={e => setPhoneOrder({...phoneOrder, quantity: parseInt(e.target.value) || 1})}
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Type *</Label>
+                                    <RadioGroup 
+                                      value={phoneOrder.dining_option} 
+                                      onValueChange={(v) => setPhoneOrder({...phoneOrder, dining_option: v as 'eat_in' | 'takeaway'})} 
+                                      className="mt-2"
+                                    >
+                                      <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="takeaway" id="phone_takeaway" />
+                                        <Label htmlFor="phone_takeaway">📦 Tag med</Label>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="eat_in" id="phone_eat_in" />
+                                        <Label htmlFor="phone_eat_in">🍽️ Spise i café</Label>
+                                      </div>
+                                    </RadioGroup>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Tidspunkt *</Label>
+                                    <select 
+                                      value={phoneOrder.timeslot} 
+                                      onChange={e => setPhoneOrder({...phoneOrder, timeslot: e.target.value})}
+                                      className="w-full mt-1 p-2 border rounded-md"
+                                    >
+                                      <option value="">Vælg tidspunkt...</option>
+                                      {(offers.find(o => o.id === selectedOfferFilter)?.timeslots || ['17:00', '17:15', '17:30', '17:45', '18:00', '18:15', '18:30', '18:45', '19:00', '19:15']).map((slot: string) => {
+                                        const ordersForSlot = filteredOrders.filter(o => o.timeslot === slot);
+                                        const eatInCount = ordersForSlot.filter(o => o.dining_option === 'eat_in').reduce((sum, o) => sum + o.quantity, 0);
+                                        const takeawayCount = ordersForSlot.filter(o => o.dining_option === 'takeaway').reduce((sum, o) => sum + o.quantity, 0);
+                                        const selectedOffer = offers.find(o => o.id === selectedOfferFilter);
+                                        const eatInCap = selectedOffer?.eat_in_capacity_per_slot || 12;
+                                        const takeawayCap = selectedOffer?.takeaway_capacity_per_slot || 20;
+                                        return (
+                                          <option key={slot} value={slot}>
+                                            {slot} (Café: {eatInCount}/{eatInCap}, Tag med: {takeawayCount}/{takeawayCap})
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  </div>
+                                  
+                                  {capacityWarning && (
+                                    <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                                      <p className="text-sm text-amber-800 font-medium whitespace-pre-line">⚠️ {capacityWarning}</p>
+                                      <div className="flex gap-2 mt-3">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => setCapacityWarning(null)}
+                                        >
+                                          Annuller
+                                        </Button>
+                                        <Button 
+                                          size="sm"
+                                          className="bg-amber-600 hover:bg-amber-700"
+                                          onClick={() => {
+                                            setCapacityWarning(null);
+                                            handlePhoneOrder(true);
+                                          }}
+                                        >
+                                          Ja, fortsæt alligevel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {!capacityWarning && (
+                                    <div className="p-3 bg-gray-100 rounded-lg">
+                                      <p className="font-bold text-lg">
+                                        Total: {(offers.find(o => o.id === selectedOfferFilter)?.price || 0) * phoneOrder.quantity} kr
+                                      </p>
+                                    </div>
+                                  )}
+                                  
+                                  {!capacityWarning && (
+                                    <Button 
+                                      onClick={() => handlePhoneOrder(false)} 
+                                      disabled={phoneOrderSubmitting || !phoneOrder.guest_name || !phoneOrder.guest_phone || !phoneOrder.timeslot} 
+                                      className="w-full"
+                                    >
+                                      {phoneOrderSubmitting ? 'Opretter...' : 'Opret telefon ordre'}
+                                    </Button>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </div>
                       )}
                     </>
