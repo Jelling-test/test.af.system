@@ -474,6 +474,11 @@ const AdminCafe = () => {
       toast.error('Vælg et tilbud først');
       return;
     }
+    
+    if (!selectedOffer.execution_date) {
+      toast.error('Tilbuddet mangler udførelsesdato - ret dette under Tilbud fanen først');
+      return;
+    }
 
     // Tjek kapacitet
     const ordersForOffer = orders.filter(o => o.offer_id === selectedOfferFilter && o.status !== 'cancelled');
