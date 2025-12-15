@@ -1593,7 +1593,7 @@ const Kort = ({ isStaff = false }: KortProps) => {
                           y={pos.y}
                           text={displayNumber}
                           fontSize={mapConfig.settings.cabinFontSize}
-                          fill="#FFFFFF"
+                          fill="#000000"
                           stroke={color}
                           strokeWidth={0.5}
                           fontStyle="bold"
