@@ -269,6 +269,16 @@ const Kort = ({ isStaff = false }: KortProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [tempSettings, setTempSettings] = useState(DEFAULT_CONFIG.settings);
   
+  // Blinkende animation for offline elementer
+  const [blinkOn, setBlinkOn] = useState(true);
+  
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      setBlinkOn(prev => !prev);
+    }, 600);
+    return () => clearInterval(blinkInterval);
+  }, []);
+  
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -524,6 +534,12 @@ const Kort = ({ isStaff = false }: KortProps) => {
     if (onlineCount === stand.meters.length) return COLORS.standAllOnline;
     if (onlineCount === 0) return COLORS.standAllOffline;
     return COLORS.standPartialOffline;
+  };
+
+  const hasOfflineMeters = (stand: PowerStand): boolean => {
+    if (stand.meters.length === 0) return false;
+    const onlineCount = stand.meters.filter((m) => m.is_online).length;
+    return onlineCount < stand.meters.length;
   };
 
   const getCabinColor = (cabin: Cabin): string => {
@@ -1507,6 +1523,7 @@ const Kort = ({ isStaff = false }: KortProps) => {
                         ? { x: stand.map_x, y: stand.map_y }
                         : getAutoPosition(index, stands.length, "stand");
                       const color = getStandColor(stand);
+                      const isOffline = hasOfflineMeters(stand);
 
                       return (
                         <React.Fragment key={stand.id}>
@@ -1517,6 +1534,7 @@ const Kort = ({ isStaff = false }: KortProps) => {
                             fill={color}
                             stroke="#000"
                             strokeWidth={selectedStand?.id === stand.id ? 3 : 1}
+                            opacity={isOffline ? (blinkOn ? 1 : 0.4) : 1}
                             draggable={!isLocked && !stand.map_locked}
                             onClick={() => setSelectedStand(stand)}
                             onTap={() => setSelectedStand(stand)}
@@ -1596,26 +1614,31 @@ const Kort = ({ isStaff = false }: KortProps) => {
                       const showBackground = isOffline || isOccupied;
                       const bgColor = isOffline ? "#FBBF24" : "#22C55E"; // Gul eller Grøn
 
+                      const circleRadius = 28;
+                      const fontSize = mapConfig.settings.cabinFontSize || 16;
+
                       return (
                         <React.Fragment key={cabin.id}>
                           {showBackground && (
                             <Circle
-                              x={pos.x + 8}
-                              y={pos.y + 8}
-                              radius={14}
+                              x={pos.x}
+                              y={pos.y}
+                              radius={circleRadius}
                               fill={bgColor}
-                              opacity={0.8}
+                              opacity={isOffline ? (blinkOn ? 0.9 : 0.3) : 0.8}
                             />
                           )}
                           <Text
                             x={pos.x}
                             y={pos.y}
                             text={displayNumber}
-                            fontSize={mapConfig.settings.cabinFontSize}
-                            fill={isOffline ? "#000000" : "#000000"}
+                            fontSize={fontSize}
+                            fill="#000000"
                             stroke={isOffline ? "#000" : color}
                             strokeWidth={0.5}
                             fontStyle="bold"
+                            offsetX={displayNumber.length > 1 ? fontSize * 0.6 : fontSize * 0.3}
+                            offsetY={fontSize * 0.5}
                             draggable={!isLocked && !cabin.map_locked}
                             onClick={() => handleCabinClick(cabin)}
                             onTap={() => handleCabinClick(cabin)}
