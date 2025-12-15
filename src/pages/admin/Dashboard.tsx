@@ -155,21 +155,29 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
       const totalAmpere = powerData?.[0]?.total_ampere || 0;
 
       // Fetch max power consumption in last 24 hours
-      const { data: maxPowerData } = await (supabase as any)
+      const { data: maxPowerData, error: maxPowerError } = await (supabase as any)
         .from('meter_readings')
         .select('power, current')
         .gte('time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('power', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      const { data: maxCurrentData } = await (supabase as any)
+      if (maxPowerError) {
+        console.error('Fejl ved hentning af max power:', maxPowerError);
+      }
+
+      const { data: maxCurrentData, error: maxCurrentError } = await (supabase as any)
         .from('meter_readings')
         .select('current')
         .gte('time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('current', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
+      if (maxCurrentError) {
+        console.error('Fejl ved hentning af max current:', maxCurrentError);
+      }
 
       const maxWatt24h = maxPowerData?.power || 0;
       const maxAmpere24h = maxCurrentData?.current || 0;
