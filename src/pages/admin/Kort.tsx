@@ -1576,7 +1576,7 @@ const Kort = ({ isStaff = false }: KortProps) => {
                         );
                       })}
 
-                    {/* Render Hytter (kun tekst, ingen baggrund) */}
+                    {/* Render Hytter med baggrundscirkel for status */}
                     {showCabins && cabins.map((cabin, index) => {
                       const pos = cabin.map_x !== null && cabin.map_y !== null
                         ? { x: cabin.map_x, y: cabin.map_y }
@@ -1585,25 +1585,45 @@ const Kort = ({ isStaff = false }: KortProps) => {
                       
                       // Strip "Hytte " prefix
                       const displayNumber = cabin.cabin_number.replace(/^Hytte\s*/i, "");
+                      
+                      // Bestem baggrundscirkel farve baseret på status
+                      const meter = allMeters.find((m) => m.meter_number === cabin.meter_id);
+                      const isOffline = !meter || !meter.is_online;
+                      const isOccupied = occupiedCabins.seasonal.has(cabin.cabin_number) || 
+                                         occupiedCabins.regular.has(cabin.cabin_number);
+                      
+                      // Gul = offline, Grøn = optaget, ingen = online/ledig
+                      const showBackground = isOffline || isOccupied;
+                      const bgColor = isOffline ? "#FBBF24" : "#22C55E"; // Gul eller Grøn
 
                       return (
-                        <Text
-                          key={cabin.id}
-                          x={pos.x}
-                          y={pos.y}
-                          text={displayNumber}
-                          fontSize={mapConfig.settings.cabinFontSize}
-                          fill="#000000"
-                          stroke={color}
-                          strokeWidth={0.5}
-                          fontStyle="bold"
-                          draggable={!isLocked && !cabin.map_locked}
-                          onClick={() => handleCabinClick(cabin)}
-                          onTap={() => handleCabinClick(cabin)}
-                          onDragEnd={(e) => handleDragEnd("cabin", cabin.id, e.target.x(), e.target.y())}
-                          shadowBlur={selectedCabin?.id === cabin.id ? 5 : 0}
-                          shadowColor="#000"
-                        />
+                        <React.Fragment key={cabin.id}>
+                          {showBackground && (
+                            <Circle
+                              x={pos.x + 8}
+                              y={pos.y + 8}
+                              radius={14}
+                              fill={bgColor}
+                              opacity={0.8}
+                            />
+                          )}
+                          <Text
+                            x={pos.x}
+                            y={pos.y}
+                            text={displayNumber}
+                            fontSize={mapConfig.settings.cabinFontSize}
+                            fill={isOffline ? "#000000" : "#000000"}
+                            stroke={isOffline ? "#000" : color}
+                            strokeWidth={0.5}
+                            fontStyle="bold"
+                            draggable={!isLocked && !cabin.map_locked}
+                            onClick={() => handleCabinClick(cabin)}
+                            onTap={() => handleCabinClick(cabin)}
+                            onDragEnd={(e) => handleDragEnd("cabin", cabin.id, e.target.x(), e.target.y())}
+                            shadowBlur={selectedCabin?.id === cabin.id ? 5 : 0}
+                            shadowColor="#000"
+                          />
+                        </React.Fragment>
                       );
                     })}
 
