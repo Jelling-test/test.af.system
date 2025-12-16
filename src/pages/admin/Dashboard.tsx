@@ -159,6 +159,7 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         .from('meter_readings')
         .select('power, current')
         .gte('time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .not('power', 'is', null)
         .order('power', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -171,6 +172,7 @@ const AdminDashboard = ({ isStaffView = false }: AdminDashboardProps = {}) => {
         .from('meter_readings')
         .select('current')
         .gte('time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .not('current', 'is', null)
         .order('current', { ascending: false })
         .limit(1)
         .maybeSingle();
